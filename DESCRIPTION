@@ -1,38 +1,53 @@
 Package: sigminer
-Title: Capture Genomic Variation Signatures using Non-Negative Matrix
-        Factorization
-Version: 0.1.11
-Authors@R: c(
-    person("Shixiang", "Wang", email = "w_shixiang@163.com",
-           role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9855-7357")),
-           person("Geoffrey", "Macintyre", role = c("ctb")), 
-           person("Xue-Song", "Liu", role = c("ctb")))
-Description: Contains functions for identification of  
-  copy number signatures (Geoffrey et al. (2018) <doi:10.1038/s41588-018-0179-8>) and 
-  mutation signatures (Alexandrov et al. (2013) <doi:10.1038/nature12477>) 
-  by non-negative matrix factorization, signature analysis and visualization. 
-  It can be used to capture signatures of genomic variation, compare genotype or
-  phenotype features of different signatures and thus uncover the relationship 
-  between the mechanism of genomic variation and phenotypes in cancer.
+Title: Extract, Analyze and Visualize Signatures for Genomic Variations
+Version: 1.0.0
+Authors@R: 
+    c(person(given = "Shixiang",
+             family = "Wang",
+             role = c("aut", "cre"),
+             email = "w_shixiang@163.com",
+             comment = c(ORCID = "0000-0001-9855-7357")),
+      person(given = "Xue-Song",
+             family = "Liu",
+             role = c("aut", "ctb"),
+             comment = c(ORCID = "0000-0002-7736-0077")),
+      person(given = "Geoffrey",
+             family = "Macintyre",
+             role = "ctb"),
+      person(given = "Anand",
+             family = "Mayakonda",
+             role = "ctb"))
+Description: Genomic alterations including single nucleotide substitution,
+    copy number alteration, etc. are the major force for cancer
+    initialization and development. Due to the specificity of molecular
+    lesions caused by genomic alterations, we can generate characteristic
+    alteration spectra, called 'signature' (Alexandrov, Ludmil B., et al. (2020) <DOI:10.1038/s41586-020-1943-3>
+    & Macintyre, Geoff, et al. (2018) <DOI:10.1038/s41588-018-0179-8>).
+    This package helps users to extract, analyze and visualize signatures from genomic alteration records,
+    thus providing new insight into cancer study.
+License: MIT + file LICENSE
 URL: https://github.com/ShixiangWang/sigminer
 BugReports: https://github.com/ShixiangWang/sigminer/issues
 Depends: R (>= 3.5)
-Imports: cluster, corrplot, cowplot, data.table, doParallel, dplyr,
-        flexmix, foreach, ggplot2, maftools, methods, NMF,
-        RColorBrewer, tidyr, magrittr, purrr
+Imports: cluster, cowplot, data.table, doFuture, dplyr, flexmix,
+        foreach, furrr, future, GenomicRanges, ggalluvial, ggplot2 (>=
+        3.3.0), ggpubr, IRanges, maftools, magrittr, methods, NMF,
+        purrr, RColorBrewer, rlang, stats, tibble, tidyr, patchwork,
+        ggplotify, circlize, lsei
+Suggests: BSgenome, BSgenome.Hsapiens.UCSC.hg19, covr, fuzzyjoin,
+        ggfittext, knitr, pheatmap, rmarkdown, roxygen2, R.utils,
+        testthat
+VignetteBuilder: knitr
 biocViews:
-Suggests: BSgenome, BSgenome.Hsapiens.UCSC.hg19, cowsay, ggpubr, knitr,
-        rmarkdown, covr, testthat, prettydoc, pheatmap
-License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
-VignetteBuilder: knitr
+RoxygenNote: 7.1.0
 NeedsCompilation: no
-Packaged: 2019-05-07 07:25:30 UTC; wsx
+Packaged: 2020-03-31 14:12:38 UTC; Shixiang
 Author: Shixiang Wang [aut, cre] (<https://orcid.org/0000-0001-9855-7357>),
+  Xue-Song Liu [aut, ctb] (<https://orcid.org/0000-0002-7736-0077>),
   Geoffrey Macintyre [ctb],
-  Xue-Song Liu [ctb]
+  Anand Mayakonda [ctb]
 Maintainer: Shixiang Wang <w_shixiang@163.com>
 Repository: CRAN
-Date/Publication: 2019-05-07 07:50:03 UTC
+Date/Publication: 2020-03-31 15:00:09 UTC

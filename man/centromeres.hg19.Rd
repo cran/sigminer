@@ -3,13 +3,15 @@
 \docType{data}
 \name{centromeres.hg19}
 \alias{centromeres.hg19}
-\title{location of centromeres at genome build hg19}
-\format{A data.frame}
+\title{Location of Centromeres at Genome Build hg19}
+\format{
+A data.frame
+}
 \source{
 Generate from UCSC gold path
 }
 \description{
-location of centromeres at genome build hg19
+Location of Centromeres at Genome Build hg19
 }
 \examples{
 data(centromeres.hg19)

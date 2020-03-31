@@ -3,65 +3,11 @@
 \docType{package}
 \name{sigminer}
 \alias{sigminer}
-\alias{sigminer-package}
-\title{sigminer: Capture Genomic Variation Signatures using Non-Negative Matrix Factorization}
+\title{sigminer: Extract, Analyze and Visualize Signatures for Genomic Variations}
 \description{
-sigminer provides functions for identification of
-copy number signatures (Geoffrey et al. (2018) \doi{10.1038/s41588-018-0179-8}) and
-mutational signatures (Alexandrov et al. (2013) \doi{10.1038/nature12477})
-by non-negative matrix factorization, signature analysis and visualization.
-It can be used to capture signatures of genomic variation, compare genotype or
-phenotype features of different signatures and thus uncover the relationship
-between the mechanism of genomic variation and phenotypes in cancer.
+Please go to \url{https://shixiangwang.github.io/sigminer-doc/} for full vignette.
 }
-\section{read_ functions}{
-
-Read data into R objects:
-\itemize{
-\item \code{\link[=read_copynumber]{read_copynumber()}} - read \code{data.frame}/files into \link{CopyNumber} object.
-\item \code{\link[=read_maf]{read_maf()}} - read \code{data.frame}/file into \link{MAF} object. This is powered by
-\code{\link[maftools]{read.maf}} function in \strong{maftools} package.
-\item \code{\link[=read_variation]{read_variation()}} - combine a \link{CopyNumber} object and a \link{MAF} object as
-a \link{GenomicVariation} object. \strong{It is not useful for now}.
-}
-}
-
-\section{sig_ functions}{
-
-Signature analysis for genomic variations:
-\itemize{
-\item \code{\link[=sig_prepare]{sig_prepare()}} - do preparation step of signature analysis for \link{CopyNumber}
-or \link{MAF} object.
-\item \code{\link[=sig_estimate]{sig_estimate()}} - provides survey plot and consensus map to user
-for selecting the best signature number.
-\item \code{\link[=sig_extract]{sig_extract()}} - extract signatures based on specified signature number.
-\item \code{\link[=sig_assign_samples]{sig_assign_samples()}} - assign samples to signatures. This classify samples
-into different subgroups based on the dominant signature.
-\item \code{\link[=sig_get_activity]{sig_get_activity()}} - obtain signature activity in samples.
-\item \code{\link[=sig_get_correlation]{sig_get_correlation()}} - obtain correlation matrix between signatures activity.
-\item \code{\link[=sig_get_similarity]{sig_get_similarity()}} - get similarity between signatures.
-\item \code{\link[=sig_summarize_subtypes]{sig_summarize_subtypes()}} - get summary of signature subtypes.
-}
-}
-
-\section{draw_ functions}{
-
-Result visualization for copy number data:
-\itemize{
-\item \code{\link[=draw_cn_distribution]{draw_cn_distribution()}} - plot copy number distribution either by length or chromosome.
-\item \code{\link[=draw_cn_features]{draw_cn_features()}} - plot copy number feature distribution.
-\item \code{\link[=draw_cn_components]{draw_cn_components()}} - plot mixture fit model components.
-}
-
-Result visualization for signature analysis:
-\itemize{
-\item \code{\link[=draw_sig_profile]{draw_sig_profile()}} - plot signature profile.
-\item \code{\link[=draw_sig_activity]{draw_sig_activity()}} - plot signature activity.
-\item \code{\link[=draw_sig_corrplot]{draw_sig_corrplot()}} - plot correlation between signature activities.
-\item \code{\link[=draw_subtypes_comparison]{draw_subtypes_comparison()}} - plot comparison between signature subtypes.
-}
-
+\details{
 Result visualization for \link{MAF} is provide by \strong{maftools} package,
 please read its \href{https://bioconductor.org/packages/release/bioc/vignettes/maftools/inst/doc/maftools.html}{vignette}.
 }
-
