@@ -27,7 +27,7 @@
 #' @param match_consensus only used when the `method` is 'consensus'.
 #' If `TRUE`, the result will match order as shown in consensus map.
 #' @return a `data.table` object
-#' @import NMF cluster
+#' @import NMF
 #' @importFrom stats kmeans
 #' @export
 #' @examples
@@ -38,8 +38,10 @@
 #' ))
 #' # Extract copy number signatures
 #' library(NMF)
-#' sig <- sig_extract(cn_tally_W$nmf_matrix, 2, nrun = 10,
-#'                    pConstant = 1e-13)
+#' sig <- sig_extract(cn_tally_W$nmf_matrix, 2,
+#'   nrun = 10,
+#'   pConstant = 1e-13
+#' )
 #'
 #' # Methods 'consensus' and 'samples' are from NMF::predict()
 #' get_groups(sig, method = "consensus", match_consensus = TRUE)
@@ -177,3 +179,7 @@ get_groups <- function(Signature,
 
   return(data)
 }
+
+utils::globalVariables(
+  c("silhouette")
+)

@@ -20,8 +20,13 @@ fitComponent <-
                                unique = FALSE, cores = 1, seed = 123456) {
       # doParallel doest not work in Windows
       # doParallel::registerDoParallel(cores = cores)
-      doFuture::registerDoFuture()
-      future::plan("multiprocess", workers = cores)
+
+      if (!requireNamespace("doFuture", quietly = TRUE)) {
+        send_info("{.pkg doFuture} is recommended to install for improving computation.")
+      } else {
+        doFuture::registerDoFuture()
+        future::plan("multiprocess", workers = cores)
+      }
 
       MYCALL <- match.call()
       MYCALL1 <- MYCALL
@@ -32,10 +37,10 @@ fitComponent <-
           if (verbose) {
             cat(" *")
           }
-          x <- try(flexmix(...))
+          x <- try(flexmix::flexmix(...))
           if (!is(x, "try-error")) {
-            logLiks[m] <- logLik(x)
-            if (logLik(x) > logLik(z)) {
+            logLiks[m] <- flexmix::logLik(x)
+            if (flexmix::logLik(x) > flexmix::logLik(z)) {
               z <- x
             }
           }
@@ -59,9 +64,11 @@ fitComponent <-
         # logLiks <- matrix(nrow = length(k), ncol = nrep)
         z_list <- foreach(
           n = seq_along(k),
+          .packages = "flexmix",
           .export = c("k", "z", "MYCALL1", "nrep", "verbose", "bestFlexmix", "seed", "...")
         ) %dopar% {
           set.seed(seed, kind = "L'Ecuyer-CMRG")
+          # loadNamespace("flexmix")
           ns <- as.character(k[n])
           if (verbose) {
             cat(k[n], ":")
@@ -179,14 +186,14 @@ fitComponent <-
 recur_fit_component <- function(fit, dist, threshold, control, model_selection = "BIC") {
   fits <- fit
   fit <- flexmix::getModel(fits, which = model_selection)
-  message("Select ", fit@k, " according to ", model_selection)
+  send_success("Select ", fit@k, " according to ", model_selection, ".")
 
   mu <- find_mu(fit)
   sub_len <- sum(diff(mu) < threshold)
 
   if (sub_len > 0) {
-    message("The model does not pass the threshold for mu difference of adjacent distribution")
-    message("Trying to call the optimal model...")
+    send_info("The model does not pass the threshold for mu difference of adjacent distribution.")
+    send_info("Trying to call the optimal model...")
   }
 
   while (sub_len > 0) {
@@ -217,8 +224,7 @@ recur_fit_component <- function(fit, dist, threshold, control, model_selection =
     sub_len <- sum(diff(mu) < threshold)
   }
 
-  message("Finally, select ", fit@k, " after passing threshold ", threshold)
-  message("===================")
+  send_success("Finally, select ", fit@k, " after passing threshold ", threshold, ".")
   fit
 }
 
