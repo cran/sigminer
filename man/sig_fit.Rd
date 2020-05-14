@@ -32,7 +32,7 @@ column representing signatures.}
 
 \item{sig_index}{a vector for signature index. "ALL" for all signatures.}
 
-\item{sig_db}{can be 'legacy' or 'SBS'. Default 'legacy'.}
+\item{sig_db}{can be 'legacy' (for COSMIC v2 'SBS'), 'SBS', 'DBS' and 'ID'. Default 'legacy'.}
 
 \item{db_type}{only used when \code{sig_db} is enabled.
 "" for keeping default, "human-exome" for transforming to exome frequency of component,
@@ -54,7 +54,7 @@ affected by relative exposure accuracy.}
 \item{rel_threshold}{numeric vector, a relative exposure lower than this value will be set to 0.
 Of note, this is a little different from the same parameter in \link{get_sig_exposure}.}
 
-\item{mode}{signature type for plotting, now supports 'copynumber' or 'SBS'.}
+\item{mode}{signature type for plotting, now supports 'copynumber', 'SBS', 'DBS' and 'ID'.}
 
 \item{true_catalog}{used by \link{sig_fit_bootstrap}, user never use it.}
 
@@ -92,6 +92,10 @@ if (requireNamespace("lsei", quietly = TRUE)) {
 
   H_dt <- sig_fit(V, W, return_class = "data.table")
   H_dt
+
+  ## Show results
+  show_sig_fit(H_infer)
+  show_sig_fit(H_dt)
 }
 
 if (requireNamespace("quadprog", quietly = TRUE)) {
@@ -101,6 +105,10 @@ if (requireNamespace("quadprog", quietly = TRUE)) {
 
   H_dt <- sig_fit(V, W, method = "QP", return_class = "data.table")
   H_dt
+
+  ## Show results
+  show_sig_fit(H_infer)
+  show_sig_fit(H_dt)
 }
 
 if (requireNamespace("GenSA", quietly = TRUE)) {
@@ -113,6 +121,10 @@ if (requireNamespace("GenSA", quietly = TRUE)) {
 
   ## Modify arguments to method
   sig_fit(V, W, method = "SA", maxit = 10, temperature = 100)
+
+  ## Show results
+  show_sig_fit(H_infer)
+  show_sig_fit(H_dt)
 }
 }
 \references{
@@ -121,5 +133,5 @@ Daniel Huebschmann, Zuguang Gu and Matthias Schlesner (2019). YAPSA: Yet Another
 Huang X, Wojtowicz D, Przytycka TM. Detecting presence of mutational signatures in cancer with confidence. Bioinformatics. 2018;34(2):330–337. doi:10.1093/bioinformatics/btx604
 }
 \seealso{
-\link{sig_extract}, \link{sig_auto_extract}
+\link{sig_extract}, \link{sig_auto_extract}, \link{sig_fit_bootstrap}, \link{sig_fit_bootstrap_batch}
 }

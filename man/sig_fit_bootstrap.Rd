@@ -13,6 +13,7 @@ sig_fit_bootstrap(
   db_type = c("", "human-exome", "human-genome"),
   show_index = TRUE,
   method = c("LS", "QP", "SA"),
+  SA_not_bootstrap = FALSE,
   type = c("absolute", "relative"),
   rel_threshold = 0,
   mode = c("SBS", "copynumber"),
@@ -34,7 +35,7 @@ column representing signatures.}
 
 \item{sig_index}{a vector for signature index. "ALL" for all signatures.}
 
-\item{sig_db}{can be 'legacy' or 'SBS'. Default 'legacy'.}
+\item{sig_db}{can be 'legacy' (for COSMIC v2 'SBS'), 'SBS', 'DBS' and 'ID'. Default 'legacy'.}
 
 \item{db_type}{only used when \code{sig_db} is enabled.
 "" for keeping default, "human-exome" for transforming to exome frequency of component,
@@ -45,12 +46,15 @@ and "human-genome" for transforming to whole genome frequency of component.}
 \item{method}{method to solve the minimazation problem.
 'LS' for least square; 'QP' for quadratic programming; 'SA' for simulated annealing.}
 
+\item{SA_not_bootstrap}{if \code{TRUE}, directly run 'SA' multiple times with original input instead of
+bootstrap samples.}
+
 \item{type}{'absolute' for signature exposure and 'relative' for signature relative exposure.}
 
 \item{rel_threshold}{numeric vector, a relative exposure lower than this value will be set to 0.
 Of note, this is a little different from the same parameter in \link{get_sig_exposure}.}
 
-\item{mode}{signature type for plotting, now supports 'copynumber' or 'SBS'.}
+\item{mode}{signature type for plotting, now supports 'copynumber', 'SBS', 'DBS' and 'ID'.}
 
 \item{find_suboptimal}{logical, if \code{TRUE}, find suboptimal decomposition with
 slightly higher error than the optimal solution by method 'SA'. This is useful
@@ -107,5 +111,8 @@ if (requireNamespace("lsei", quietly = TRUE)) {
 }
 \references{
 Huang X, Wojtowicz D, Przytycka TM. Detecting presence of mutational signatures in cancer with confidence. Bioinformatics. 2018;34(2):330–337. doi:10.1093/bioinformatics/btx604
+}
+\seealso{
+\link{sig_fit}, \link{sig_fit_bootstrap_batch}
 }
 \keyword{bootstrap}

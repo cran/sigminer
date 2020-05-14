@@ -32,7 +32,7 @@
 #' @return The exposure result either in `matrix` or `data.table` format.
 #' If `return_error` set `TRUE`, a `list` is returned.
 #' @export
-#' @seealso [sig_extract], [sig_auto_extract]
+#' @seealso [sig_extract], [sig_auto_extract], [sig_fit_bootstrap], [sig_fit_bootstrap_batch]
 #' @references Daniel Huebschmann, Zuguang Gu and Matthias Schlesner (2019). YAPSA: Yet Another Package for Signature Analysis. R package version 1.12.0.
 #' @references Huang X, Wojtowicz D, Przytycka TM. Detecting presence of mutational signatures in cancer with confidence. Bioinformatics. 2018;34(2):330–337. doi:10.1093/bioinformatics/btx604
 #' @examples
@@ -53,6 +53,10 @@
 #'
 #'   H_dt <- sig_fit(V, W, return_class = "data.table")
 #'   H_dt
+#'
+#'   ## Show results
+#'   show_sig_fit(H_infer)
+#'   show_sig_fit(H_dt)
 #' }
 #'
 #' if (requireNamespace("quadprog", quietly = TRUE)) {
@@ -62,6 +66,10 @@
 #'
 #'   H_dt <- sig_fit(V, W, method = "QP", return_class = "data.table")
 #'   H_dt
+#'
+#'   ## Show results
+#'   show_sig_fit(H_infer)
+#'   show_sig_fit(H_dt)
 #' }
 #'
 #' if (requireNamespace("GenSA", quietly = TRUE)) {
@@ -74,6 +82,10 @@
 #'
 #'   ## Modify arguments to method
 #'   sig_fit(V, W, method = "SA", maxit = 10, temperature = 100)
+#'
+#'   ## Show results
+#'   show_sig_fit(H_infer)
+#'   show_sig_fit(H_dt)
 #' }
 #' @testexamples
 #' expect_is(H_infer, "matrix")
@@ -92,7 +104,6 @@ sig_fit <- function(catalogue_matrix,
                     mode = c("SBS", "copynumber"),
                     true_catalog = NULL,
                     ...) {
-  ## TODO: add mode for DBS and INDEL and also add COSMIC database for them
   stopifnot(is.matrix(catalogue_matrix))
   db_type <- match.arg(db_type)
   method <- match.arg(method)
@@ -114,34 +125,45 @@ sig_fit <- function(catalogue_matrix,
     }
   } else {
     send_success("Signature index detected.")
-    send_info("Checking signature database in {.pkg maftools}.")
+    send_info("Checking signature database in package.")
 
-    if (sig_db == "legacy") {
-      sigs_db <- readRDS(file = system.file("extdata", "legacy_signatures.RDs",
+    db_file <- switch(
+      sig_db,
+      legacy = system.file("extdata", "legacy_signatures.RDs",
         package = "maftools", mustWork = TRUE
-      ))
-      sigs <- sigs_db$db
+      ),
+      SBS = system.file("extdata", "SBS_signatures.RDs",
+        package = "maftools", mustWork = TRUE
+      ),
+      DBS = system.file("extdata", "DBS_signatures.rds",
+        package = "sigminer", mustWork = TRUE
+      ),
+      ID = system.file("extdata", "ID_signatures.rds",
+        package = "sigminer", mustWork = TRUE
+      ),
+      send_stop("Invalid parameter passing to {.code sig_db}.")
+    )
+    sigs_db <- readRDS(file = db_file)
+    sigs <- sigs_db$db
+    sigs <- apply(sigs, 2, function(x) x / sum(x))
 
+    ## Some extra processing
+    if (sig_db == "legacy" & db_type == "human-genome") {
       ## v2 comes from Exome
-      if (db_type == "human-genome") {
-        sigs <- sig_convert(sig = sigs, from = "human-exome", to = "human-genome")
-      }
-
-      avail_index <- substring(colnames(sigs), 8)
-    } else {
-      sigs_db <- readRDS(file = system.file("extdata", "SBS_signatures.RDs",
-        package = "maftools", mustWork = TRUE
-      ))
-      sigs <- sigs_db$db
-
-      sigs <- apply(sigs, 2, function(x) x / sum(x))
+      sigs <- sig_convert(sig = sigs, from = "human-exome", to = "human-genome")
+    } else if (sig_db == "SBS" & db_type == "human-exome") {
       ## v3 comes from WGS (PCAWG)
-      if (db_type == "human-exome") {
-        sigs <- sig_convert(sig = sigs, from = "human-genome", to = "human-exome")
-      }
-
-      avail_index <- substring(colnames(sigs), 4)
+      ## Should DBS and ID also handle such cases?
+      sigs <- sig_convert(sig = sigs, from = "human-genome", to = "human-exome")
     }
+
+    avail_index <- switch(
+      sig_db,
+      legacy = substring(colnames(sigs), 8),
+      SBS = substring(colnames(sigs), 4),
+      DBS = substring(colnames(sigs), 4),
+      ID = substring(colnames(sigs), 3)
+    )
 
     send_info("Checking signature index.")
 
@@ -210,7 +232,7 @@ sig_fit <- function(catalogue_matrix,
   if (!is.null(cat_rowname) & !is.null(sig_rowname)) {
     send_info("Checking rownames for catalog matrix and signature matrix.")
     if (!all(sig_rowname == cat_rowname)) {
-      message("Matrix V and W don't have same orders. Try reordering...")
+      send_info("Matrix V and W don't have same orders. Try reordering...")
       if (all(sort(cat_rowname) == sort(sig_rowname))) {
         ## Set catalogue matrix as signature matrix
         catalogue_matrix <- catalogue_matrix[sig_rowname, , drop = FALSE]
@@ -282,7 +304,7 @@ sig_fit <- function(catalogue_matrix,
 
     ## compute estimation error for each sample/patient (Frobenius norm)
     if (type == "relative") {
-      send_warning("When the type is 'relative', the returned error is affected by its precision.")
+      send_warning("When the type is 'relative', the returned error is a little affected by its precision.")
       if (is.null(true_catalog)) {
         errors <- sapply(
           seq(ncol(expo_mat)),
@@ -314,6 +336,7 @@ sig_fit <- function(catalogue_matrix,
       }
     }
     names(errors) <- colnames(catalogue_matrix)
+    errors <- round(errors, digits = 3)
 
     send_success("Done.")
     return(list(
@@ -390,6 +413,7 @@ decompose_SA <- function(x, y, P, type = "absolute", ...) {
   # N: how many signatures are selected
   N <- ncol(P)
   # change our suggestion to control GenSA function based on user's requirements
+  # https://blog.csdn.net/georgesale/article/details/80631417
   our.control <- list(maxit = 1000, temperature = 10, nb.stop.improvement = 1000, simple.function = TRUE)
   our.control[names(control)] <- control
   # Solve the problem using simulated annealing package GenSA

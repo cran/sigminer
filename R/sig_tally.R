@@ -45,6 +45,31 @@
 #' # Use method designed by Macintyre et al.
 #' cn_tally_M <- sig_tally(cn, method = "M")
 #' }
+#' \donttest{
+#' # Prepare SBS signature analysis
+#' laml.maf <- system.file("extdata", "tcga_laml.maf.gz", package = "maftools")
+#' laml <- read_maf(maf = laml.maf)
+#' if (require("BSgenome.Hsapiens.UCSC.hg19")) {
+#'   mt_tally <- sig_tally(
+#'     laml,
+#'     ref_genome = "BSgenome.Hsapiens.UCSC.hg19",
+#'     use_syn = TRUE
+#'   )
+#'   mt_tally$nmf_matrix[1:5, 1:5]
+#'
+#'   ## Use strand bias categories
+#'   mt_tally <- sig_tally(
+#'     laml,
+#'     ref_genome = "BSgenome.Hsapiens.UCSC.hg19",
+#'     use_syn = TRUE, add_trans_bias = TRUE
+#'   )
+#'   ## Test it by enrichment analysis
+#'   enrich_component_strand_bias(mt_tally$nmf_matrix)
+#'   enrich_component_strand_bias(mt_tally$all_matrices$SBS_24)
+#' } else {
+#'   message("Please install package 'BSgenome.Hsapiens.UCSC.hg19' firstly!")
+#' }
+#' }
 #' @tests
 #' ## Load copy number object
 #' load(system.file("extdata", "toy_copynumber.RData",
@@ -289,34 +314,8 @@ sig_tally.CopyNumber <- function(object,
 #' @references Mayakonda, Anand, et al. "Maftools: efficient and comprehensive analysis of somatic variants in cancer." Genome research 28.11 (2018): 1747-1756.
 #' @references Roberts SA, Lawrence MS, Klimczak LJ, et al. An APOBEC Cytidine Deaminase Mutagenesis Pattern is Widespread in Human Cancers. Nature genetics. 2013;45(9):970-976. doi:10.1038/ng.2702.
 #' @references Bergstrom EN, Huang MN, Mahto U, Barnes M, Stratton MR, Rozen SG, Alexandrov LB: SigProfilerMatrixGenerator: a tool for visualizing and exploring patterns of small mutational events. BMC Genomics 2019, 20:685 https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-019-6041-2
-#' @examples
-#' \donttest{
-#' # Prepare SBS signature analysis
-#' laml.maf <- system.file("extdata", "tcga_laml.maf.gz", package = "maftools")
-#' laml <- read_maf(maf = laml.maf)
-#' if (require("BSgenome.Hsapiens.UCSC.hg19")) {
-#'   mt_tally <- sig_tally(
-#'     laml,
-#'     ref_genome = "BSgenome.Hsapiens.UCSC.hg19",
-#'     use_syn = TRUE
-#'   )
-#'   mt_tally$nmf_matrix[1:5, 1:5]
-#'
-#'   ## Use strand bias categories
-#'   mt_tally <- sig_tally(
-#'     laml,
-#'     ref_genome = "BSgenome.Hsapiens.UCSC.hg19",
-#'     use_syn = TRUE, add_trans_bias = TRUE
-#'   )
-#'   ## Test it by enrichment analysis
-#'   enrich_component_strand_bias(mt_tally$nmf_matrix)
-#'   enrich_component_strand_bias(mt_tally$all_matrices$SBS_24)
-#' } else {
-#'   message("Please install package 'BSgenome.Hsapiens.UCSC.hg19' firstly!")
-#' }
-#' }
 #' @export
-sig_tally.MAF <- function(object, mode = c("SBS", "DBS", "ID"),
+sig_tally.MAF <- function(object, mode = c("SBS", "DBS", "ID", "ALL"),
                           ref_genome = NULL,
                           genome_build = NULL,
                           add_trans_bias = FALSE,
@@ -451,17 +450,46 @@ sig_tally.MAF <- function(object, mode = c("SBS", "DBS", "ID"),
     res <- generate_matrix_SBS(query, ref_genome, genome_build = genome_build, add_trans_bias = add_trans_bias)
   } else if (mode == "DBS") {
     res <- generate_matrix_DBS(query, ref_genome, genome_build = genome_build, add_trans_bias = add_trans_bias)
-  } else {
+  } else if (mode == "ID") {
     ## INDEL
     res <- generate_matrix_INDEL(query, ref_genome, genome_build = genome_build, add_trans_bias = add_trans_bias)
+  } else {
+    send_info("All types of matrices generation - start.")
+
+    res_SBS <- tryCatch(
+      generate_matrix_SBS(query, ref_genome, genome_build = genome_build, add_trans_bias = add_trans_bias),
+      error = function(e) {
+        NULL
+      }
+    )
+    res_DBS <- tryCatch(
+      generate_matrix_DBS(query, ref_genome, genome_build = genome_build, add_trans_bias = add_trans_bias),
+      error = function(e) {
+        NULL
+      }
+    )
+    res_ID <- tryCatch(
+      generate_matrix_INDEL(query, ref_genome, genome_build = genome_build, add_trans_bias = add_trans_bias),
+      error = function(e) {
+        NULL
+      }
+    )
+
+    send_info("All types of matrices generation (APOBEC scores included) - end.")
+    res <- c(res_SBS$all_matrices, res_DBS$all_matrices, res_ID$all_matrices)
+    res$APOBEC_scores <- res_SBS$APOBEC_scores
   }
 
   send_success("Done.")
 
   if (keep_only_matrix) {
-    res$nmf_matrix
+    if (mode == "ALL") {
+      send_warning("Mode 'ALL' cannot return a single matrix.")
+      return(res)
+    }
+    return(res$nmf_matrix)
   } else {
-    res
+    return(res)
   }
 }
 
