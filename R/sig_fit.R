@@ -46,19 +46,6 @@
 #' V <- W %*% H
 #' V
 #'
-#' if (requireNamespace("lsei", quietly = TRUE)) {
-#'   H_infer <- sig_fit(V, W)
-#'   H_infer
-#'   H
-#'
-#'   H_dt <- sig_fit(V, W, return_class = "data.table")
-#'   H_dt
-#'
-#'   ## Show results
-#'   show_sig_fit(H_infer)
-#'   show_sig_fit(H_dt)
-#' }
-#'
 #' if (requireNamespace("quadprog", quietly = TRUE)) {
 #'   H_infer <- sig_fit(V, W, method = "QP")
 #'   H_infer
@@ -70,6 +57,11 @@
 #'   ## Show results
 #'   show_sig_fit(H_infer)
 #'   show_sig_fit(H_dt)
+#'
+#'   ## Get clusters/groups
+#'   H_dt_rel <- sig_fit(V, W, return_class = "data.table", type = "relative")
+#'   z <- get_groups(H_dt_rel, method = "k-means")
+#'   show_groups(z)
 #' }
 #'
 #' if (requireNamespace("GenSA", quietly = TRUE)) {
@@ -96,12 +88,12 @@ sig_fit <- function(catalogue_matrix,
                     sig_db = "legacy",
                     db_type = c("", "human-exome", "human-genome"),
                     show_index = TRUE,
-                    method = c("LS", "QP", "SA"),
+                    method = c("QP", "LS", "SA"),
                     type = c("absolute", "relative"),
                     return_class = c("matrix", "data.table"),
                     return_error = FALSE,
                     rel_threshold = 0,
-                    mode = c("SBS", "copynumber"),
+                    mode = c("SBS", "DBS", "ID", "copynumber"),
                     true_catalog = NULL,
                     ...) {
   stopifnot(is.matrix(catalogue_matrix))
@@ -141,6 +133,9 @@ sig_fit <- function(catalogue_matrix,
       ID = system.file("extdata", "ID_signatures.rds",
         package = "sigminer", mustWork = TRUE
       ),
+      TSB = system.file("extdata", "TSB_signatures.rds",
+        package = "sigminer", mustWork = TRUE
+      ),
       send_stop("Invalid parameter passing to {.code sig_db}.")
     )
     sigs_db <- readRDS(file = db_file)
@@ -162,7 +157,8 @@ sig_fit <- function(catalogue_matrix,
       legacy = substring(colnames(sigs), 8),
       SBS = substring(colnames(sigs), 4),
       DBS = substring(colnames(sigs), 4),
-      ID = substring(colnames(sigs), 3)
+      ID = substring(colnames(sigs), 3),
+      TSB = substring(colnames(sigs), 4)
     )
 
     send_info("Checking signature index.")
@@ -246,9 +242,9 @@ sig_fit <- function(catalogue_matrix,
   send_success("Method '", method, "' detected.")
   f_fit <- switch(method,
     LS = {
-      if (!requireNamespace("lsei", quietly = TRUE)) {
-        send_stop("Please install 'lsei' package firstly.")
-      }
+      # if (!requireNamespace("lsei", quietly = TRUE)) {
+      #   send_stop("Please install 'lsei' package from <https://github.com/ShixiangWang/lsei> firstly.")
+      # }
       decompose_LS
     },
     QP = {
@@ -280,6 +276,7 @@ sig_fit <- function(catalogue_matrix,
     as.matrix()
   rownames(expo) <- colnames(sig_matrix)
   colnames(expo) <- colnames(catalogue_matrix)
+  expo[is.na(expo)] <- 0
 
   expo_mat <- expo
 
@@ -359,7 +356,12 @@ decompose_LS <- function(x, y, sig_matrix, type = "absolute", ...) {
   G <- diag(dim(sig_matrix)[2])
   H <- rep(0, dim(sig_matrix)[2])
 
-  expo <- lsei::lsei(
+  lsei <-tryCatch(eval(parse(text = "lsei::lsei")),
+                  error = function(e) {
+                    send_stop("Package 'lsei' not found. Please install it from <https://github.com/ShixiangWang/lsei> firstly.")
+                  })
+
+  expo <- lsei(
     a = sig_matrix,
     b = x,
     e = G,
@@ -374,26 +376,30 @@ decompose_LS <- function(x, y, sig_matrix, type = "absolute", ...) {
 # P is same as sig_matrix
 
 decompose_QP <- function(x, y, P, type = "absolute", ...) {
-  m <- x / sum(x)
-  # N: how many signatures are selected
-  N <- ncol(P)
-  # G: matrix appearing in the quatric programming objective function
-  G <- t(P) %*% P
-  # C: matrix constraints under which we want to minimize the quatric programming objective function.
-  C <- cbind(rep(1, N), diag(N))
-  # b: vector containing the values of b_0.
-  b <- c(1, rep(0, N))
-  # d: vector appearing in the quatric programming objective function
-  d <- t(m) %*% P
+  if (sum(x) != 0) {
+    m <- x / sum(x)
+    # N: how many signatures are selected
+    N <- ncol(P)
+    # G: matrix appearing in the quatric programming objective function
+    G <- t(P) %*% P
+    # C: matrix constraints under which we want to minimize the quatric programming objective function.
+    C <- cbind(rep(1, N), diag(N))
+    # b: vector containing the values of b_0.
+    b <- c(1, rep(0, N))
+    # d: vector appearing in the quatric programming objective function
+    d <- t(m) %*% P
 
-  # Solve quadratic programming problem
-  out <- quadprog::solve.QP(Dmat = G, dvec = d, Amat = C, bvec = b, meq = 1)
+    # Solve quadratic programming problem
+    out <- quadprog::solve.QP(Dmat = G, dvec = d, Amat = C, bvec = b, meq = 1)
 
-  # Some exposure values are negative, but very close to 0
-  # Change these neagtive values to zero and renormalized
-  expo <- out$solution
-  expo[expo < 0] <- 0
-  expo <- expo / sum(expo)
+    # Some exposure values are negative, but very close to 0
+    # Change these neagtive values to zero and renormalized
+    expo <- out$solution
+    expo[expo < 0] <- 0
+    expo <- expo / sum(expo)
+  } else {
+    expo <- rep(0, ncol(P))
+  }
 
   # return the exposures
   return_expo(expo, y, type, total = sum(x))
@@ -401,25 +407,30 @@ decompose_QP <- function(x, y, P, type = "absolute", ...) {
 
 
 decompose_SA <- function(x, y, P, type = "absolute", ...) {
-  control <- list(...)
 
-  m <- x / sum(x)
-  # objective function to be minimized
-  # local version of Frobenius norm to simplify and speed-up the objective function
-  FrobeniusNorm.local <- function(exposures) {
-    estimate <- P %*% exposures
-    return(sqrt(sum((m - (estimate / sum(estimate)))^2)))
+  if (sum(x) != 0) {
+    control <- list(...)
+
+    m <- x / sum(x)
+    # objective function to be minimized
+    # local version of Frobenius norm to simplify and speed-up the objective function
+    FrobeniusNorm.local <- function(exposures) {
+      estimate <- P %*% exposures
+      return(sqrt(sum((m - (estimate / sum(estimate)))^2)))
+    }
+    # N: how many signatures are selected
+    N <- ncol(P)
+    # change our suggestion to control GenSA function based on user's requirements
+    # https://blog.csdn.net/georgesale/article/details/80631417
+    our.control <- list(maxit = 1000, temperature = 10, nb.stop.improvement = 1000, simple.function = TRUE)
+    our.control[names(control)] <- control
+    # Solve the problem using simulated annealing package GenSA
+    sa <- GenSA::GenSA(lower = rep(0.0, N), upper = rep(1.0, N), fn = FrobeniusNorm.local, control = our.control)
+    # Normalize the solution
+    expo <- sa$par / sum(sa$par)
+  } else {
+    expo <- rep(0, ncol(P))
   }
-  # N: how many signatures are selected
-  N <- ncol(P)
-  # change our suggestion to control GenSA function based on user's requirements
-  # https://blog.csdn.net/georgesale/article/details/80631417
-  our.control <- list(maxit = 1000, temperature = 10, nb.stop.improvement = 1000, simple.function = TRUE)
-  our.control[names(control)] <- control
-  # Solve the problem using simulated annealing package GenSA
-  sa <- GenSA::GenSA(lower = rep(0.0, N), upper = rep(1.0, N), fn = FrobeniusNorm.local, control = our.control)
-  # Normalize the solution
-  expo <- sa$par / sum(sa$par)
 
   # return the exposures
   return_expo(expo, y, type, total = sum(x))

@@ -1,12 +1,17 @@
-#' Exposure Instability Analysis of Signature Exposures with Bootstrap
+#' Exposure Instability Analysis of Signature Exposures with Bootstrapping
 #'
 #' @inheritParams sig_fit
 #' @inheritParams sig_fit_bootstrap
 #' @param methods a subset of `c("LS", "QP", "SA")`.
+#' @param min_count minimal exposure in a sample, default is 1. Any patient has total exposure less
+#' than this value will be filtered out.
 #' @param p_val_thresholds a vector of relative exposure threshold for calculating p values.
-#' @param use_parallel if `TRUE`, use parallel computation based on **furrr** package,
-#' not implemented yet.
+#' @param use_parallel if `TRUE`, use parallel computation based on **furrr** package.
 #' @param seed random seed to reproduce the result.
+#' @param job_id a job ID, default is `NULL`, can be a string. When not `NULL`, all bootstrapped results
+#' will be saved to local machine location defined by `result_dir`. This is very useful for running
+#' more than 10 times for more than 100 samples.
+#' @param result_dir see above, default is temp directory defined by R.
 #' @param ... other common parameters passing to [sig_fit_bootstrap], including `sig`, `sig_index`,
 #' `sig_db`, `db_type`, `mode`, etc.
 #'
@@ -25,19 +30,23 @@
 #' V <- W %*% H
 #' V
 #'
-#' if (requireNamespace("lsei") & requireNamespace("quadprog")) {
-#'   z <- sig_fit_bootstrap_batch(V, sig = W, n = 2)
-#'   z
+#' if (requireNamespace("quadprog")) {
 #'   z10 <- sig_fit_bootstrap_batch(V, sig = W, n = 10)
+#'   z10
 #' }
 #' @testexamples
-#' expect_is(z, "list")
+#' expect_is(z10, "list")
 #' z2 <- sig_fit_bootstrap_batch(V, sig = W, n = 2, use_parallel = TRUE)
 #' expect_is(z2, "list")
-sig_fit_bootstrap_batch <- function(catalogue_matrix, methods = c("LS", "QP"), n = 100L,
+sig_fit_bootstrap_batch <- function(catalogue_matrix,
+                                    methods = c("QP"),
+                                    n = 100L,
+                                    min_count = 1L,
                                     p_val_thresholds = c(0.05),
                                     use_parallel = FALSE,
                                     seed = 123456L,
+                                    job_id = NULL,
+                                    result_dir = tempdir(),
                                     ...) {
   stopifnot(is.matrix(catalogue_matrix))
 
@@ -47,6 +56,26 @@ sig_fit_bootstrap_batch <- function(catalogue_matrix, methods = c("LS", "QP"), n
   timer <- Sys.time()
   send_info("Batch Bootstrap Signature Exposure Analysis Started.")
   on.exit(send_elapsed_time(timer, "Total "))
+
+  if (!is.null(job_id)) {
+    if (!dir.exists(result_dir)) {
+      dir.create(result_dir, recursive = TRUE)
+    }
+    send_success("Job mode is enabled. All bootstrapped results will be saved to ", result_dir)
+  }
+
+  samp_index <- colSums(catalogue_matrix) > min_count
+  if (sum(samp_index) != nrow(catalogue_matrix)) {
+    send_info(paste(
+      "Samples to be filtered out:",
+      paste(colnames(catalogue_matrix)[!samp_index], collapse = ",")
+    ))
+    catalogue_matrix <- catalogue_matrix[, samp_index, drop = FALSE]
+  }
+
+  if (ncol(catalogue_matrix) < 1) {
+    send_stop("No sample left after filtering, please check your input!")
+  }
 
   ## Get optimal exposures with different methods
   send_info("Finding optimal exposures (&errors) for different methods.")
@@ -73,6 +102,14 @@ sig_fit_bootstrap_batch <- function(catalogue_matrix, methods = c("LS", "QP"), n
   send_info("Getting bootstrap exposures (&errors) for different methods.")
   send_info("This step is time consuming, please be patient.")
   call_bt <- function(x, sample, y, methods, n = 1000, ...) {
+    if (!is.null(job_id)) {
+      fpath <- file.path(result_dir, paste0(job_id, "_", sample, ".rds"))
+      if (file.exists(fpath)) {
+        send_info("Sample '", sample, "' has been processed.")
+        return(fpath)
+      }
+    }
+    on.exit(gc(verbose = FALSE))
     names(x) <- y
     out_list <- list()
     send_info("Processing sample {.code ", sample, "}.")
@@ -80,22 +117,36 @@ sig_fit_bootstrap_batch <- function(catalogue_matrix, methods = c("LS", "QP"), n
       out <- sig_fit_bootstrap(x, n = n, method = m, ...)
       out_list[[m]] <- out
     }
-    return(out_list)
+    if (!is.null(job_id)) {
+      saveRDS(out_list, file = fpath)
+      return(fpath)
+    } else {
+      return(out_list)
+    }
   }
 
   if (use_parallel) {
     oplan <- future::plan()
     future::plan("multiprocess", workers = future::availableCores())
-    furrr::future_options(seed = TRUE)
+    #furrr::future_options(seed = TRUE)
     on.exit(future::plan(oplan), add = TRUE)
     bt_list <- furrr::future_map2(as.data.frame(catalogue_matrix), colnames(catalogue_matrix), call_bt,
-      y = rownames(catalogue_matrix), methods = methods, n = n, ..., .progress = TRUE
+      y = rownames(catalogue_matrix), methods = methods, n = n, ..., .progress = TRUE,
+      .options = furrr::future_options(seed = seed) # set options
     )
   } else {
     bt_list <- purrr::map2(as.data.frame(catalogue_matrix), colnames(catalogue_matrix), call_bt,
       y = rownames(catalogue_matrix), methods = methods, n = n, ...
     )
   }
+
+  if (is.character(bt_list[[1]])) {
+    ## Assume file paths
+    bt_list <- purrr::map(bt_list, function(x) {
+      readRDS(x)
+    })
+  }
+
   send_success("Gotten.")
 
   send_info("Reporting p values...")

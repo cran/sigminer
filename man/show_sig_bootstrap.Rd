@@ -11,7 +11,9 @@ show_sig_bootstrap_exposure(
   bt_result,
   sample = NULL,
   signatures = NULL,
-  methods = "LS",
+  methods = "QP",
+  plot_fun = c("boxplot", "violin"),
+  highlight = "auto",
   palette = "aaas",
   title = NULL,
   xlab = FALSE,
@@ -27,11 +29,13 @@ show_sig_bootstrap_exposure(
 show_sig_bootstrap_error(
   bt_result,
   sample = NULL,
-  methods = "LS",
+  methods = "QP",
+  plot_fun = c("boxplot", "violin"),
+  highlight = "auto",
   palette = "aaas",
   title = NULL,
   xlab = FALSE,
-  ylab = "Decomposition error",
+  ylab = "Reconstruction error (F2 norm)",
   width = 0.3,
   dodge_width = 0.8,
   outlier.shape = NA,
@@ -45,7 +49,8 @@ show_sig_bootstrap_stability(
   bt_result,
   signatures = NULL,
   measure = c("MRSE", "MAE", "AbsDiff"),
-  methods = "LS",
+  methods = "QP",
+  plot_fun = c("boxplot", "violin"),
   palette = "aaas",
   title = NULL,
   xlab = FALSE,
@@ -65,6 +70,11 @@ show_sig_bootstrap_stability(
 \item{signatures}{signatures to show.}
 
 \item{methods}{a subset of \code{c("LS", "QP", "SA")}.}
+
+\item{plot_fun}{set the plot function.}
+
+\item{highlight}{set the color for optimal solution. Default is "auto", which use the same color as
+bootstrap results, you can set it to color like "red", "gold", etc.}
 
 \item{palette}{the color palette to be used for coloring or filling by groups.
 Allowed values include "grey" for grey color palettes; brewer palettes e.g.
@@ -105,7 +115,7 @@ error bars). Allowed values are one or the combination of: "none",
 \item{add.params}{parameters (color, shape, size, fill, linetype) for the
 argument 'add'; e.g.: add.params = list(color = "red").}
 
-\item{...}{other parameters passing to \link[ggpubr:ggboxplot]{ggpubr::ggboxplot}.}
+\item{...}{other parameters passing to \link[ggpubr:ggboxplot]{ggpubr::ggboxplot} or \link[ggpubr:ggviolin]{ggpubr::ggviolin}.}
 
 \item{legend}{character specifying legend position. Allowed values are one of
 c("top", "bottom", "left", "right", "none"). To remove the legend use
@@ -162,25 +172,26 @@ if (require("BSgenome.Hsapiens.UCSC.hg19")) {
   ## bt_result = sig_fit_bootstrap_batch(mat, sig = mt_sig, n = 10, use_parallel = TRUE)
 
   ## Show bootstrap exposure (optimal exposure is shown as triangle)
-  p1 <- show_sig_bootstrap_exposure(bt_result, methods = c("LS", "QP"))
+  p1 <- show_sig_bootstrap_exposure(bt_result, methods = c("QP"))
   p1
-  p2 <- show_sig_bootstrap_exposure(bt_result, methods = c("LS", "QP"),
-                                               sample = "TCGA-AB-3012",
-                                               signatures = c("Sig1", "Sig2"))
+  p2 <- show_sig_bootstrap_exposure(bt_result,
+    methods = c("QP"),
+    sample = "TCGA-AB-3012",
+    signatures = c("Sig1", "Sig2")
+  )
   p2
 
   ## Show bootstrap error
-  p3 <- show_sig_bootstrap_error(bt_result, methods = c("LS", "QP"))
+  p3 <- show_sig_bootstrap_error(bt_result, methods = c("QP"))
   p3
 
   ## Show exposure (in)stability
-  p4 <- show_sig_bootstrap_stability(bt_result, methods = c("LS", "QP"))
+  p4 <- show_sig_bootstrap_stability(bt_result, methods = c("QP"))
   p4
-  p5 <- show_sig_bootstrap_stability(bt_result, methods = c("LS", "QP"), measure = "MAE")
+  p5 <- show_sig_bootstrap_stability(bt_result, methods = c("QP"), measure = "MAE")
   p5
-  p6 <- show_sig_bootstrap_stability(bt_result, methods = c("LS", "QP"), measure = "AbsDiff")
+  p6 <- show_sig_bootstrap_stability(bt_result, methods = c("QP"), measure = "AbsDiff")
   p6
-
 } else {
   message("Please install package 'BSgenome.Hsapiens.UCSC.hg19' firstly!")
 }

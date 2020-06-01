@@ -11,12 +11,12 @@ sig_fit(
   sig_db = "legacy",
   db_type = c("", "human-exome", "human-genome"),
   show_index = TRUE,
-  method = c("LS", "QP", "SA"),
+  method = c("QP", "LS", "SA"),
   type = c("absolute", "relative"),
   return_class = c("matrix", "data.table"),
   return_error = FALSE,
   rel_threshold = 0,
-  mode = c("SBS", "copynumber"),
+  mode = c("SBS", "DBS", "ID", "copynumber"),
   true_catalog = NULL,
   ...
 )
@@ -32,13 +32,16 @@ column representing signatures.}
 
 \item{sig_index}{a vector for signature index. "ALL" for all signatures.}
 
-\item{sig_db}{can be 'legacy' (for COSMIC v2 'SBS'), 'SBS', 'DBS' and 'ID'. Default 'legacy'.}
+\item{sig_db}{can be 'legacy' (for COSMIC v2 'SBS'),
+'SBS', 'DBS', 'ID' and 'TSB' (for SBS transcriptional strand bias signatures).
+Default 'legacy'.}
 
 \item{db_type}{only used when \code{sig_db} is enabled.
 "" for keeping default, "human-exome" for transforming to exome frequency of component,
-and "human-genome" for transforming to whole genome frequency of component.}
+and "human-genome" for transforming to whole genome frequency of component.
+Currently only works for 'SBS'.}
 
-\item{show_index}{if \code{TRUE}, show valid index.}
+\item{show_index}{if \code{TRUE}, show valid indices.}
 
 \item{method}{method to solve the minimazation problem.
 'LS' for least square; 'QP' for quadratic programming; 'SA' for simulated annealing.}
@@ -85,19 +88,6 @@ colnames(H) <- paste0("samp", 1:4)
 V <- W \%*\% H
 V
 
-if (requireNamespace("lsei", quietly = TRUE)) {
-  H_infer <- sig_fit(V, W)
-  H_infer
-  H
-
-  H_dt <- sig_fit(V, W, return_class = "data.table")
-  H_dt
-
-  ## Show results
-  show_sig_fit(H_infer)
-  show_sig_fit(H_dt)
-}
-
 if (requireNamespace("quadprog", quietly = TRUE)) {
   H_infer <- sig_fit(V, W, method = "QP")
   H_infer
@@ -109,6 +99,11 @@ if (requireNamespace("quadprog", quietly = TRUE)) {
   ## Show results
   show_sig_fit(H_infer)
   show_sig_fit(H_dt)
+
+  ## Get clusters/groups
+  H_dt_rel <- sig_fit(V, W, return_class = "data.table", type = "relative")
+  z <- get_groups(H_dt_rel, method = "k-means")
+  show_groups(z)
 }
 
 if (requireNamespace("GenSA", quietly = TRUE)) {

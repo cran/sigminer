@@ -1,3 +1,19 @@
+# sigminer 1.0.6
+
+- Added "scatter" in `sig_fit()` function to better visualize a few samples.
+- Added "highlight" option.
+- `lsei` package was removed from CRAN, here I reset default method to 'QP' and tried best to keep the LS usage in sigminer ([#189](https://github.com/ShixiangWang/sigminer/issues/189)).
+- Made consistent copy number labels in `show_sig_profile()` and added input checking for this function.
+- Fixed unconsistent bootstrap when use `furrr`, solution is from <https://github.com/DavisVaughan/furrr/issues/107>.
+- Properly handled null-count sample in `sig_fit()` for methods `QP` and `SA`.
+- Supported boxplot or violin in `show_sig_fit()` and `show_sig_bootstrap_*` functions.
+- Added job mode for `sig_fit_bootstrap_batch` for more useful in practice.
+- Added `show_groups()` to show the signature contribution in each group from `get_groups()`.
+- Expanded clustering in `get_groups()` to result of `sig_fit()`.
+- Properly handled null-count samples in `sig_fit_bootstrap_batch()`.
+- Added strand bias labeling for INDEL.
+- Added COSMIC TSB signatures.
+
 # sigminer 1.0.5
 
 - Exported APOBEC result when the mode is 'ALL' in `sig_tally()`.

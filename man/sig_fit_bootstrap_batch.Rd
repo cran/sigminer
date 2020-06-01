@@ -2,15 +2,18 @@
 % Please edit documentation in R/sig_fit_bootstrap_batch.R
 \name{sig_fit_bootstrap_batch}
 \alias{sig_fit_bootstrap_batch}
-\title{Exposure Instability Analysis of Signature Exposures with Bootstrap}
+\title{Exposure Instability Analysis of Signature Exposures with Bootstrapping}
 \usage{
 sig_fit_bootstrap_batch(
   catalogue_matrix,
-  methods = c("LS", "QP"),
+  methods = c("QP"),
   n = 100L,
+  min_count = 1L,
   p_val_thresholds = c(0.05),
   use_parallel = FALSE,
   seed = 123456L,
+  job_id = NULL,
+  result_dir = tempdir(),
   ...
 )
 }
@@ -23,12 +26,20 @@ transpose it by \code{t()}.}
 
 \item{n}{the number of bootstrap replicates.}
 
+\item{min_count}{minimal exposure in a sample, default is 1. Any patient has total exposure less
+than this value will be filtered out.}
+
 \item{p_val_thresholds}{a vector of relative exposure threshold for calculating p values.}
 
-\item{use_parallel}{if \code{TRUE}, use parallel computation based on \strong{furrr} package,
-not implemented yet.}
+\item{use_parallel}{if \code{TRUE}, use parallel computation based on \strong{furrr} package.}
 
 \item{seed}{random seed to reproduce the result.}
+
+\item{job_id}{a job ID, default is \code{NULL}, can be a string. When not \code{NULL}, all bootstrapped results
+will be saved to local machine location defined by \code{result_dir}. This is very useful for running
+more than 10 times for more than 100 samples.}
+
+\item{result_dir}{see above, default is temp directory defined by R.}
 
 \item{...}{other common parameters passing to \link{sig_fit_bootstrap}, including \code{sig}, \code{sig_index},
 \code{sig_db}, \code{db_type}, \code{mode}, etc.}
@@ -37,7 +48,7 @@ not implemented yet.}
 a \code{list} of \code{data.table}.
 }
 \description{
-Exposure Instability Analysis of Signature Exposures with Bootstrap
+Exposure Instability Analysis of Signature Exposures with Bootstrapping
 }
 \examples{
 W <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
@@ -50,10 +61,9 @@ colnames(H) <- paste0("samp", 1:4)
 V <- W \%*\% H
 V
 
-if (requireNamespace("lsei") & requireNamespace("quadprog")) {
-  z <- sig_fit_bootstrap_batch(V, sig = W, n = 2)
-  z
+if (requireNamespace("quadprog")) {
   z10 <- sig_fit_bootstrap_batch(V, sig = W, n = 10)
+  z10
 }
 }
 \seealso{
