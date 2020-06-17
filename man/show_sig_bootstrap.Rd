@@ -13,7 +13,9 @@ show_sig_bootstrap_exposure(
   signatures = NULL,
   methods = "QP",
   plot_fun = c("boxplot", "violin"),
+  agg_fun = c("mean", "median", "min", "max"),
   highlight = "auto",
+  highlight_size = 4,
   palette = "aaas",
   title = NULL,
   xlab = FALSE,
@@ -31,7 +33,9 @@ show_sig_bootstrap_error(
   sample = NULL,
   methods = "QP",
   plot_fun = c("boxplot", "violin"),
+  agg_fun = c("mean", "median"),
   highlight = "auto",
+  highlight_size = 4,
   palette = "aaas",
   title = NULL,
   xlab = FALSE,
@@ -48,7 +52,7 @@ show_sig_bootstrap_error(
 show_sig_bootstrap_stability(
   bt_result,
   signatures = NULL,
-  measure = c("MRSE", "MAE", "AbsDiff"),
+  measure = c("RMSE", "MAE", "AbsDiff"),
   methods = "QP",
   plot_fun = c("boxplot", "violin"),
   palette = "aaas",
@@ -69,12 +73,16 @@ show_sig_bootstrap_stability(
 
 \item{signatures}{signatures to show.}
 
-\item{methods}{a subset of \code{c("LS", "QP", "SA")}.}
+\item{methods}{a subset of \code{c("NNLS", "QP", "SA")}.}
 
 \item{plot_fun}{set the plot function.}
 
+\item{agg_fun}{set the aggregation function when \code{sample} is \code{NULL}.}
+
 \item{highlight}{set the color for optimal solution. Default is "auto", which use the same color as
 bootstrap results, you can set it to color like "red", "gold", etc.}
+
+\item{highlight_size}{size for highlighting triangle, default is \code{4}.}
 
 \item{palette}{the color palette to be used for coloring or filling by groups.
 Allowed values include "grey" for grey color palettes; brewer palettes e.g.
@@ -122,7 +130,7 @@ c("top", "bottom", "left", "right", "none"). To remove the legend use
 legend = "none". Legend position can be also specified using a numeric
 vector c(x, y); see details section.}
 
-\item{measure}{measure to estimate the exposure instability, can be one of 'MRSE', 'MAE' and 'AbsDiff'.}
+\item{measure}{measure to estimate the exposure instability, can be one of 'RMSE', 'MAE' and 'AbsDiff'.}
 }
 \value{
 a \code{ggplot} object
@@ -140,7 +148,7 @@ The error from optimal solution (the decomposition error from original input) is
 \item \link{show_sig_bootstrap_stability} - this function plots the signature exposure instability for specified signatures. Currently,
 the instability measure supports 3 types:
 \itemize{
-\item 'MRSE' for Mean Root Squared Error (default) of bootstrap exposures and original exposures for each sample.
+\item 'RMSE' for Mean Root Squared Error (default) of bootstrap exposures and original exposures for each sample.
 \item 'MAE' for Mean Absolute Error of bootstrap exposures and original exposures for each sample.
 \item 'AbsDiff' for Absolute Difference between mean bootstram exposure and original exposure.
 }
@@ -171,8 +179,10 @@ if (require("BSgenome.Hsapiens.UCSC.hg19")) {
   ## Parallel computation
   ## bt_result = sig_fit_bootstrap_batch(mat, sig = mt_sig, n = 10, use_parallel = TRUE)
 
+  ## At default, mean bootstrap exposure for each sample has been calculated
+  p <- show_sig_bootstrap_exposure(bt_result, methods = c("QP"))
   ## Show bootstrap exposure (optimal exposure is shown as triangle)
-  p1 <- show_sig_bootstrap_exposure(bt_result, methods = c("QP"))
+  p1 <- show_sig_bootstrap_exposure(bt_result, methods = c("QP"), sample = "TCGA-AB-2802")
   p1
   p2 <- show_sig_bootstrap_exposure(bt_result,
     methods = c("QP"),
@@ -182,7 +192,10 @@ if (require("BSgenome.Hsapiens.UCSC.hg19")) {
   p2
 
   ## Show bootstrap error
-  p3 <- show_sig_bootstrap_error(bt_result, methods = c("QP"))
+  ## Similar to exposure above
+  p <- show_sig_bootstrap_error(bt_result, methods = c("QP"))
+  p
+  p3 <- show_sig_bootstrap_error(bt_result, methods = c("QP"), sample = "TCGA-AB-2802")
   p3
 
   ## Show exposure (in)stability

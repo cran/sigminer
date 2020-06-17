@@ -11,7 +11,7 @@ sig_fit(
   sig_db = "legacy",
   db_type = c("", "human-exome", "human-genome"),
   show_index = TRUE,
-  method = c("QP", "LS", "SA"),
+  method = c("QP", "NNLS", "SA"),
   type = c("absolute", "relative"),
   return_class = c("matrix", "data.table"),
   return_error = FALSE,
@@ -44,7 +44,7 @@ Currently only works for 'SBS'.}
 \item{show_index}{if \code{TRUE}, show valid indices.}
 
 \item{method}{method to solve the minimazation problem.
-'LS' for least square; 'QP' for quadratic programming; 'SA' for simulated annealing.}
+'NNLS' for nonnegative least square; 'QP' for quadratic programming; 'SA' for simulated annealing.}
 
 \item{type}{'absolute' for signature exposure and 'relative' for signature relative exposure.}
 
@@ -73,9 +73,11 @@ catalogue \code{V} with known signatures \code{W} by solving the minimization pr
 \verb{min(||W*H - V||)} where W and V are known.
 }
 \details{
-The method 'LS' is a modification based on \code{LCD} function from YAPSA pakcage.
+The method 'NNLS' solves the minimization problem with nonnegative least-squares constraints.
 The method 'QP' and 'SA' are modified from SignatureEstimation package.
 See references for details.
+Of note, when fitting exposures for copy number signatures, only components of
+feature CN is used.
 }
 \examples{
 W <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
@@ -126,6 +128,9 @@ if (requireNamespace("GenSA", quietly = TRUE)) {
 Daniel Huebschmann, Zuguang Gu and Matthias Schlesner (2019). YAPSA: Yet Another Package for Signature Analysis. R package version 1.12.0.
 
 Huang X, Wojtowicz D, Przytycka TM. Detecting presence of mutational signatures in cancer with confidence. Bioinformatics. 2018;34(2):330–337. doi:10.1093/bioinformatics/btx604
+
+Kim, Jaegil, et al. "Somatic ERCC2 mutations are associated with a distinct genomic signature in urothelial tumors."
+Nature genetics 48.6 (2016): 600.
 }
 \seealso{
 \link{sig_extract}, \link{sig_auto_extract}, \link{sig_fit_bootstrap}, \link{sig_fit_bootstrap_batch}

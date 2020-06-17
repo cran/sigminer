@@ -4,11 +4,26 @@
 
 # Get copy number list ----------------------------------------------------
 
-get_cnlist <- function(CopyNumber, ignore_chrs = NULL) {
-  if (!inherits(CopyNumber, "CopyNumber")) {
-    stop("Input must be a CopyNumber object!")
+get_cnlist <- function(CopyNumber, ignore_chrs = NULL, add_index = FALSE) {
+  if (!inherits(CopyNumber, "CopyNumber") & !data.table::is.data.table(CopyNumber)) {
+    stop("Input must be a CopyNumber object or a data.table!")
   }
-  data <- data.table::copy(CopyNumber@data)
+  if (is.data.frame(CopyNumber)) {
+    ## If it is a data.table
+    # order by segment start position by each chromosome in each sample
+    req_cols <- c("chromosome", "start", "end", "segVal", "sample")
+    data <- data.table::copy(CopyNumber)
+
+    if (!all(req_cols %in% colnames(data))) {
+      stop(paste0(req_cols, collapse = ","), " are necessary columns!")
+    }
+
+    data <- data[, .SD[order(.SD$start, decreasing = FALSE)], by = c("sample", "chromosome")]
+    all_cols <- colnames(data)
+    data.table::setcolorder(data, neworder = c(req_cols, setdiff(all_cols, req_cols)))
+  } else {
+    data <- data.table::copy(CopyNumber@data)
+  }
   if (!is.null(ignore_chrs)) {
     chrs_exist <- ignore_chrs %in% unique(data$chromosome)
     if (!any(chrs_exist)) {
@@ -21,6 +36,11 @@ get_cnlist <- function(CopyNumber, ignore_chrs = NULL) {
       data <- data[!chromosome %in% ignore_chrs[chrs_exist]]
     }
   }
+
+  if (add_index) {
+    data$Index <- seq(1, nrow(data))
+  }
+
   res <- split(data, by = "sample")
   res
 }
@@ -224,17 +244,29 @@ get_matrix <- function(CN_features,
     send_info(
       "More details about reference components please see {.url https://github.com/ShixiangWang/absoluteCNVdata}"
     )
-    if (!file.exists("Nat_Gen_component_parameters.rds")) {
+    if (!file.exists(file.path(tempdir(), "Nat_Gen_component_parameters.rds"))) {
       send_info(
         "Nat_Gen_component_parameters.rds doesnot exist, will download reference components."
       )
-      download.file(
-        url = "https://github.com/ShixiangWang/absoluteCNVdata/raw/master/component_parameters.rds",
-        destfile = file.path(tempdir(), "Nat_Gen_component_parameters.rds")
+      tryCatch(
+        download.file(
+          url = "https://github.com/ShixiangWang/absoluteCNVdata/raw/master/component_parameters.rds",
+          destfile = file.path(tempdir(), "Nat_Gen_component_parameters.rds")
+        ),
+        error = function(e) {
+          send_info("Bad internet from GitHub, try Gitee (may also not work).")
+          download.file(
+            url = "https://gitee.com/ShixiangWang/absoluteCNVdata/raw/master/component_parameters.rds",
+            destfile = file.path(tempdir(), "Nat_Gen_component_parameters.rds")
+          )
+        }
       )
     }
     all_components <-
       readRDS(file.path(tempdir(), "Nat_Gen_component_parameters.rds"))
+    send_warning(
+      "This reference data may only works for ovarian cancer!"
+    )
   }
 
   feature_orders <- c("bp10MB", "copynumber", "changepoint", "bpchrarm", "osCN", "segsize")
@@ -602,6 +634,7 @@ utils::globalVariables(
     "i",
     "chrom",
     "chromosome",
-    "segVal"
+    "segVal",
+    ".SD"
   )
 )

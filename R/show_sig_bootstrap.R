@@ -10,7 +10,7 @@
 #' The error from optimal solution (the decomposition error from original input) is shown as triangle point. **Only one sample can be plotted**.
 #' - [show_sig_bootstrap_stability] - this function plots the signature exposure instability for specified signatures. Currently,
 #' the instability measure supports 3 types:
-#'   - 'MRSE' for Mean Root Squared Error (default) of bootstrap exposures and original exposures for each sample.
+#'   - 'RMSE' for Mean Root Squared Error (default) of bootstrap exposures and original exposures for each sample.
 #'   - 'MAE' for Mean Absolute Error of bootstrap exposures and original exposures for each sample.
 #'   - 'AbsDiff' for Absolute Difference between mean bootstram exposure and original exposure.
 #'
@@ -21,11 +21,13 @@
 #' @param bt_result result object from [sig_fit_bootstrap_batch].
 #' @param sample a sample id.
 #' @param signatures signatures to show.
-#' @param measure measure to estimate the exposure instability, can be one of 'MRSE', 'MAE' and 'AbsDiff'.
+#' @param measure measure to estimate the exposure instability, can be one of 'RMSE', 'MAE' and 'AbsDiff'.
 #' @param dodge_width dodge width.
 #' @param plot_fun set the plot function.
+#' @param agg_fun set the aggregation function when `sample` is `NULL`.
 #' @param highlight set the color for optimal solution. Default is "auto", which use the same color as
 #' bootstrap results, you can set it to color like "red", "gold", etc.
+#' @param highlight_size size for highlighting triangle, default is `4`.
 #' @param ... other parameters passing to [ggpubr::ggboxplot] or [ggpubr::ggviolin].
 #'
 #' @name show_sig_bootstrap
@@ -57,8 +59,10 @@
 #'   ## Parallel computation
 #'   ## bt_result = sig_fit_bootstrap_batch(mat, sig = mt_sig, n = 10, use_parallel = TRUE)
 #'
+#'   ## At default, mean bootstrap exposure for each sample has been calculated
+#'   p <- show_sig_bootstrap_exposure(bt_result, methods = c("QP"))
 #'   ## Show bootstrap exposure (optimal exposure is shown as triangle)
-#'   p1 <- show_sig_bootstrap_exposure(bt_result, methods = c("QP"))
+#'   p1 <- show_sig_bootstrap_exposure(bt_result, methods = c("QP"), sample = "TCGA-AB-2802")
 #'   p1
 #'   p2 <- show_sig_bootstrap_exposure(bt_result,
 #'     methods = c("QP"),
@@ -68,7 +72,10 @@
 #'   p2
 #'
 #'   ## Show bootstrap error
-#'   p3 <- show_sig_bootstrap_error(bt_result, methods = c("QP"))
+#'   ## Similar to exposure above
+#'   p <- show_sig_bootstrap_error(bt_result, methods = c("QP"))
+#'   p
+#'   p3 <- show_sig_bootstrap_error(bt_result, methods = c("QP"), sample = "TCGA-AB-2802")
 #'   p3
 #'
 #'   ## Show exposure (in)stability
@@ -95,7 +102,8 @@ NULL
 #' @export
 show_sig_bootstrap_exposure <- function(bt_result, sample = NULL, signatures = NULL,
                                         methods = "QP", plot_fun = c("boxplot", "violin"),
-                                        highlight = "auto",
+                                        agg_fun = c("mean", "median", "min", "max"),
+                                        highlight = "auto", highlight_size = 4,
                                         palette = "aaas", title = NULL,
                                         xlab = FALSE, ylab = "Signature exposure", width = 0.3,
                                         dodge_width = 0.8, outlier.shape = NA,
@@ -103,6 +111,8 @@ show_sig_bootstrap_exposure <- function(bt_result, sample = NULL, signatures = N
                                         ...) {
   stopifnot(is.list(bt_result))
   plot_fun <- match.arg(plot_fun)
+  agg_fun <- match.arg(agg_fun)
+  agg_mode <- FALSE
   plot_fun <- switch(
     plot_fun,
     boxplot = ggpubr::ggboxplot,
@@ -122,8 +132,20 @@ show_sig_bootstrap_exposure <- function(bt_result, sample = NULL, signatures = N
     }
     dat <- dplyr::filter(dat, .data$sample %in% .env$sample)
   } else {
-    send_warning("Top 1 sample is selected due to no sample specified in argument {.code sample}.")
-    dat <- dplyr::filter(dat, .data$sample %in% .data$sample[1])
+    agg_mode <- TRUE
+    send_success("NULL sample detected, aggregate mode enabled.")
+    send_info("The summarized values will be stored in 'summary' element of result ggplot2 object.")
+    agg_fun <- switch(agg_fun,
+      mean = mean,
+      median = median,
+      min = min,
+      max = max
+    )
+    dat <- dat %>%
+      dplyr::mutate(type = ifelse(.data$type != "optimal", "bootstrap", .data$type)) %>%
+      dplyr::group_by(.data$type, .data$method, .data$sample, .data$sig) %>%
+      dplyr::summarise(exposure = agg_fun(.data$exposure, na.rm = TRUE)) %>%
+      dplyr::ungroup()
   }
   if (!is.null(signatures)) {
     dat <- dplyr::filter(dat, .data$sig %in% signatures)
@@ -133,7 +155,11 @@ show_sig_bootstrap_exposure <- function(bt_result, sample = NULL, signatures = N
   }
 
   if (is.null(title)) {
-    title <- unique(dat$sample)
+    if (agg_mode) {
+      title <- "All samples"
+    } else {
+      title <- unique(dat$sample)
+    }
   }
 
   send_info("Plotting.")
@@ -144,21 +170,26 @@ show_sig_bootstrap_exposure <- function(bt_result, sample = NULL, signatures = N
     title = title, xlab = xlab, ylab = ylab, ...
   )
 
-  if (highlight == "auto") {
-    p <- p + ggplot2::geom_point(
-      data = subset(dat, dat$type == "optimal"),
-      mapping = ggplot2::aes_string(x = "sig", y = "exposure", color = "method"),
-      shape = 17, size = 4,
-      position = ggplot2::position_dodge2(width = dodge_width, preserve = "single")
-    )
+  if (!agg_mode) {
+    if (highlight == "auto") {
+      p <- p + ggplot2::geom_point(
+        data = subset(dat, dat$type == "optimal"),
+        mapping = ggplot2::aes_string(x = "sig", y = "exposure", color = "method"),
+        shape = 17, size = highlight_size,
+        position = ggplot2::position_dodge2(width = dodge_width, preserve = "single")
+      )
+    } else {
+      p <- p + ggplot2::geom_point(
+        data = subset(dat, dat$type == "optimal"),
+        mapping = ggplot2::aes_string(x = "sig", y = "exposure"),
+        shape = 17, size = highlight_size, color = highlight,
+        position = ggplot2::position_dodge2(width = dodge_width, preserve = "single")
+      )
+    }
   } else {
-    p <- p + ggplot2::geom_point(
-      data = subset(dat, dat$type == "optimal"),
-      mapping = ggplot2::aes_string(x = "sig", y = "exposure"),
-      shape = 17, size = 4, color = highlight,
-      position = ggplot2::position_dodge2(width = dodge_width, preserve = "single")
-    )
+    p$summary <- dat
   }
+
   p
 }
 
@@ -167,7 +198,8 @@ show_sig_bootstrap_exposure <- function(bt_result, sample = NULL, signatures = N
 #' @export
 show_sig_bootstrap_error <- function(bt_result, sample = NULL,
                                      methods = "QP", plot_fun = c("boxplot", "violin"),
-                                     highlight = "auto",
+                                     agg_fun = c("mean", "median"),
+                                     highlight = "auto", highlight_size = 4,
                                      palette = "aaas", title = NULL,
                                      xlab = FALSE, ylab = "Reconstruction error (F2 norm)", width = 0.3,
                                      dodge_width = 0.8, outlier.shape = NA,
@@ -176,6 +208,8 @@ show_sig_bootstrap_error <- function(bt_result, sample = NULL,
                                      ...) {
   stopifnot(is.list(bt_result))
   plot_fun <- match.arg(plot_fun)
+  agg_fun <- match.arg(agg_fun)
+  agg_mode <- FALSE
   plot_fun <- switch(
     plot_fun,
     boxplot = ggpubr::ggboxplot,
@@ -195,15 +229,31 @@ show_sig_bootstrap_error <- function(bt_result, sample = NULL,
     }
     dat <- dplyr::filter(dat, .data$sample %in% .env$sample)
   } else {
-    send_warning("Top 1 sample is selected due to no sample specified in argument {.code sample}.")
-    dat <- dplyr::filter(dat, .data$sample %in% .data$sample[1])
+    agg_mode <- TRUE
+    send_success("NULL sample detected, aggregate mode enabled.")
+    send_info("The summarized values will be stored in 'summary' element of result ggplot2 object.")
+    agg_fun <- switch(agg_fun,
+      mean = mean,
+      median = median,
+      min = min,
+      max = max
+    )
+    dat <- dat %>%
+      dplyr::mutate(type = ifelse(.data$type != "optimal", "bootstrap", .data$type)) %>%
+      dplyr::group_by(.data$type, .data$method, .data$sample) %>%
+      dplyr::summarise(errors = agg_fun(.data$errors, na.rm = TRUE)) %>%
+      dplyr::ungroup()
   }
   if (!nrow(dat) > 0) {
     send_stop("No data left to plot, could you check your input?")
   }
 
   if (is.null(title)) {
-    title <- unique(dat$sample)
+    if (agg_mode) {
+      title <- "All samples"
+    } else {
+      title <- unique(dat$sample)
+    }
   }
 
   send_info("Plotting.")
@@ -214,20 +264,24 @@ show_sig_bootstrap_error <- function(bt_result, sample = NULL,
     title = title, xlab = xlab, ylab = ylab, legend = legend, ...
   )
 
-  if (highlight == "auto") {
-    p <- p + ggplot2::geom_point(
-      data = subset(dat, dat$type == "optimal"),
-      mapping = ggplot2::aes_string(x = "method", y = "errors", color = "method"),
-      shape = 17, size = 4,
-      position = ggplot2::position_dodge2(width = dodge_width, preserve = "single")
-    )
+  if (!agg_mode) {
+    if (highlight == "auto") {
+      p <- p + ggplot2::geom_point(
+        data = subset(dat, dat$type == "optimal"),
+        mapping = ggplot2::aes_string(x = "method", y = "errors", color = "method"),
+        shape = 17, size = highlight_size,
+        position = ggplot2::position_dodge2(width = dodge_width, preserve = "single")
+      )
+    } else {
+      p <- p + ggplot2::geom_point(
+        data = subset(dat, dat$type == "optimal"),
+        mapping = ggplot2::aes_string(x = "method", y = "errors"),
+        shape = 17, size = highlight_size, color = highlight,
+        position = ggplot2::position_dodge2(width = dodge_width, preserve = "single")
+      )
+    }
   } else {
-    p <- p + ggplot2::geom_point(
-      data = subset(dat, dat$type == "optimal"),
-      mapping = ggplot2::aes_string(x = "method", y = "errors"),
-      shape = 17, size = 4, color = highlight,
-      position = ggplot2::position_dodge2(width = dodge_width, preserve = "single")
-    )
+    p$summary <- dat
   }
   p
 }
@@ -235,7 +289,7 @@ show_sig_bootstrap_error <- function(bt_result, sample = NULL,
 
 #' @rdname show_sig_bootstrap
 #' @export
-show_sig_bootstrap_stability <- function(bt_result, signatures = NULL, measure = c("MRSE", "MAE", "AbsDiff"),
+show_sig_bootstrap_stability <- function(bt_result, signatures = NULL, measure = c("RMSE", "MAE", "AbsDiff"),
                                          methods = "QP", plot_fun = c("boxplot", "violin"),
                                          palette = "aaas", title = NULL,
                                          xlab = FALSE, ylab = "Signature instability",
@@ -284,8 +338,8 @@ show_sig_bootstrap_stability <- function(bt_result, signatures = NULL, measure =
       dplyr::summarise(measure = abs(.data$optimal - .data$bootstrap)) %>%
       dplyr::ungroup()
   } else {
-    ## Calculate MRSE（Mean Root Squared Error）or MAE (Mean Absolute Error)
-    if (measure == "MRSE") {
+    ## Calculate RMSE（Root Mean Squared Error）or MAE (Mean Absolute Error)
+    if (measure == "RMSE") {
       ## across solution: https://github.com/tidyverse/dplyr/issues/5230
       dat <- dat %>%
         tidyr::pivot_wider(names_from = "type", values_from = "exposure") %>%

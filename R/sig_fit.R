@@ -4,9 +4,11 @@
 #' catalogue `V` with known signatures `W` by solving the minimization problem
 #' `min(||W*H - V||)` where W and V are known.
 #'
-#' The method 'LS' is a modification based on `LCD` function from YAPSA pakcage.
+#' The method 'NNLS' solves the minimization problem with nonnegative least-squares constraints.
 #' The method 'QP' and 'SA' are modified from SignatureEstimation package.
 #' See references for details.
+#' Of note, when fitting exposures for copy number signatures, only components of
+#' feature CN is used.
 #'
 #' @param catalogue_matrix a numeric matrix `V` with row representing components and
 #' columns representing samples, typically you can get `nmf_matrix` from `sig_tally()` and
@@ -19,7 +21,7 @@
 #' or just a raw signature matrix with row representing components (motifs) and
 #' column representing signatures.
 #' @param method method to solve the minimazation problem.
-#' 'LS' for least square; 'QP' for quadratic programming; 'SA' for simulated annealing.
+#' 'NNLS' for nonnegative least square; 'QP' for quadratic programming; 'SA' for simulated annealing.
 #' @param return_class string, 'matrix' or 'data.table'.
 #' @param return_error if `TRUE`, also return method error (Frobenius norm). NOTE:
 #' it is better to obtain the error when the type is 'absolute', because the error is
@@ -33,8 +35,13 @@
 #' If `return_error` set `TRUE`, a `list` is returned.
 #' @export
 #' @seealso [sig_extract], [sig_auto_extract], [sig_fit_bootstrap], [sig_fit_bootstrap_batch]
-#' @references Daniel Huebschmann, Zuguang Gu and Matthias Schlesner (2019). YAPSA: Yet Another Package for Signature Analysis. R package version 1.12.0.
-#' @references Huang X, Wojtowicz D, Przytycka TM. Detecting presence of mutational signatures in cancer with confidence. Bioinformatics. 2018;34(2):330–337. doi:10.1093/bioinformatics/btx604
+#' @references
+#' Daniel Huebschmann, Zuguang Gu and Matthias Schlesner (2019). YAPSA: Yet Another Package for Signature Analysis. R package version 1.12.0.
+#'
+#' Huang X, Wojtowicz D, Przytycka TM. Detecting presence of mutational signatures in cancer with confidence. Bioinformatics. 2018;34(2):330–337. doi:10.1093/bioinformatics/btx604
+#'
+#' Kim, Jaegil, et al. "Somatic ERCC2 mutations are associated with a distinct genomic signature in urothelial tumors."
+#'  Nature genetics 48.6 (2016): 600.
 #' @examples
 #' W <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
 #' colnames(W) <- c("sig1", "sig2")
@@ -88,7 +95,7 @@ sig_fit <- function(catalogue_matrix,
                     sig_db = "legacy",
                     db_type = c("", "human-exome", "human-genome"),
                     show_index = TRUE,
-                    method = c("QP", "LS", "SA"),
+                    method = c("QP", "NNLS", "SA"),
                     type = c("absolute", "relative"),
                     return_class = c("matrix", "data.table"),
                     return_error = FALSE,
@@ -241,11 +248,11 @@ sig_fit <- function(catalogue_matrix,
 
   send_success("Method '", method, "' detected.")
   f_fit <- switch(method,
-    LS = {
-      # if (!requireNamespace("lsei", quietly = TRUE)) {
-      #   send_stop("Please install 'lsei' package from <https://github.com/ShixiangWang/lsei> firstly.")
-      # }
-      decompose_LS
+    NNLS = {
+      if (!requireNamespace("pracma", quietly = TRUE)) {
+        send_stop("Please install 'pracma' package firstly.")
+      }
+      decompose_NNLS
     },
     QP = {
       if (!requireNamespace("quadprog", quietly = TRUE)) {
@@ -351,22 +358,30 @@ sig_fit <- function(catalogue_matrix,
 ## sig_matrix: reference signature matrix, components X signatures
 ## type: type of signature contribution to return
 
-decompose_LS <- function(x, y, sig_matrix, type = "absolute", ...) {
-  # Set constraints x >= 0
-  G <- diag(dim(sig_matrix)[2])
-  H <- rep(0, dim(sig_matrix)[2])
+# decompose_LS <- function(x, y, sig_matrix, type = "absolute", ...) {
+#   # Set constraints x >= 0
+#   G <- diag(dim(sig_matrix)[2])
+#   H <- rep(0, dim(sig_matrix)[2])
+#
+#   lsei <- tryCatch(eval(parse(text = "lsei::lsei")),
+#                   error = function(e) {
+#                     send_stop("Package 'lsei' not found. Please install it from <https://github.com/ShixiangWang/lsei> firstly.")
+#                   })
+#
+#   expo <- lsei(
+#     a = sig_matrix,
+#     b = x,
+#     e = G,
+#     f = H
+#   )
+#
+#   expo <- expo / sum(expo)
+#   return_expo(expo = expo, y, type, total = sum(x))
+# }
 
-  lsei <-tryCatch(eval(parse(text = "lsei::lsei")),
-                  error = function(e) {
-                    send_stop("Package 'lsei' not found. Please install it from <https://github.com/ShixiangWang/lsei> firstly.")
-                  })
-
-  expo <- lsei(
-    a = sig_matrix,
-    b = x,
-    e = G,
-    f = H
-  )
+decompose_NNLS <- function(x, y, sig_matrix, type = "absolute", ...) {
+  ## lsqnonneg solve nonnegative least-squares constraints problem.
+  expo <- pracma::lsqnonneg(sig_matrix, x)$x
 
   expo <- expo / sum(expo)
   return_expo(expo = expo, y, type, total = sum(x))

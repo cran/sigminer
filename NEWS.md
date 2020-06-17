@@ -1,3 +1,16 @@
+# sigminer 1.0.7
+
+- Removed useless options in `read_maf()`.
+- Modify method 'LS' in `sig_fit()` to 'NNLS' and implement it with **pracma** package ([#216](https://github.com/ShixiangWang/sigminer/issues/216)).
+- Made `use_all` option in `read_copynumber()` working correctly.
+- Fixed potential problem raised by unordered copy number segments ([#217](https://github.com/ShixiangWang/sigminer/issues/217)).
+- Fixed a typo, correct `MRSE` to `RMSE`.
+- Added feature in `show_sig_bootstrap_*()` for plotting aggregated values.
+- Fixed bug when use `get_groups()` for clustering.
+- Fixed bug about using reference components from NatGen 2018 paper.
+- Added option `highlight_size` for `show_sig_bootstrap_*()`.
+- Fixed bug about signature profile plotting for method 'M'.
+
 # sigminer 1.0.6
 
 - Added "scatter" in `sig_fit()` function to better visualize a few samples.
