@@ -10,11 +10,10 @@ show_cn_profile(
   show_n = NULL,
   show_title = FALSE,
   chrs = paste0("chr", 1:22),
-  genome_build = c("hg19", "hg38"),
+  genome_build = c("hg19", "hg38", "mm10"),
   nrow = NULL,
   ncol = NULL,
-  return_plotlist = FALSE,
-  .call = FALSE
+  return_plotlist = FALSE
 )
 }
 \arguments{
@@ -37,8 +36,6 @@ is a \code{data.frame}, a column called \code{sample} must exist.}
 \item{ncol}{number of columns in the plot grid when multiple samples are selected.}
 
 \item{return_plotlist}{default is \code{FALSE}, if \code{TRUE}, return a plot list instead of a combined plot.}
-
-\item{.call}{User should not use it.}
 }
 \value{
 a \code{ggplot} object or a \code{list}

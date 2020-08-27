@@ -17,7 +17,8 @@ get_sig_similarity(
 )
 }
 \arguments{
-\item{Signature}{a \code{Signature} object or a component-by-signature matrix (sum of each column is 1).
+\item{Signature}{a \code{Signature} object or a component-by-signature matrix (sum of each column is 1)
+or a normalized component-by-sample matirx (sum of each column is 1).
 More please see examples.}
 
 \item{Ref}{default is \code{NULL}, can be a same object as \code{Signature}.}
@@ -50,7 +51,7 @@ The remove operation will be done after normalization. Default is \code{NULL}.}
 \item{verbose}{if \code{TRUE}, print extra info.}
 }
 \value{
-a \code{list} containing smilarities, aetiologies if available, and best match.
+a \code{list} containing smilarities, aetiologies if available, best match and RSS.
 }
 \description{
 The reference signatures can be either a \code{Signature} object specified by \code{Ref} argument

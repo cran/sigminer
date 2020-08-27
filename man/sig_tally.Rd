@@ -12,6 +12,7 @@ sig_tally(object, ...)
   object,
   method = "Wang",
   ignore_chrs = NULL,
+  indices = NULL,
   feature_setting = sigminer::CN.features,
   type = c("probability", "count"),
   reference_components = FALSE,
@@ -31,7 +32,7 @@ sig_tally(object, ...)
 \method{sig_tally}{MAF}(
   object,
   mode = c("SBS", "DBS", "ID", "ALL"),
-  ref_genome = NULL,
+  ref_genome = "BSgenome.Hsapiens.UCSC.hg19",
   genome_build = NULL,
   add_trans_bias = FALSE,
   ignore_chrs = NULL,
@@ -47,9 +48,11 @@ sig_tally(object, ...)
 corresponding class (e.g. \code{CopyNumber}).}
 
 \item{method}{method for feature classfication, can be one of "Macintyre" ("M"),
-"Wang" ("W") and "Tao & Wang" ("T").}
+"Wang" ("W").}
 
 \item{ignore_chrs}{Chromsomes to ignore from analysis. e.g. chrX and chrY.}
+
+\item{indices}{integer vector indicating segments to keep.}
 
 \item{feature_setting}{a \code{data.frame} used for classification.
 \strong{Only used when method is "Wang" ("W")}.
@@ -105,10 +108,10 @@ For a \code{MAF} object, this will just return the most useful matrix.}
 
 \item{mode}{type of mutation matrix to extract, can be one of 'SBS', 'DBS' and 'ID'.}
 
-\item{ref_genome}{BSgenome object or name of the installed BSgenome package. Example: BSgenome.Hsapiens.UCSC.hg19
-Default NULL, tries to auto-detect from installed genomes.}
+\item{ref_genome}{'BSgenome.Hsapiens.UCSC.hg19', 'BSgenome.Hsapiens.UCSC.hg38' and
+'BSgenome.Mmusculus.UCSC.mm10' etc.}
 
-\item{genome_build}{genome build 'hg19' or 'hg38', if not set, guess it by \code{ref_genome}.}
+\item{genome_build}{genome build 'hg19', 'hg38' or "mm10", if not set, guess it by \code{ref_genome}.}
 
 \item{add_trans_bias}{if \code{TRUE}, consider transcriptional bias categories.
 'T:' for Transcribed (the variant is on the transcribed strand);
@@ -128,7 +131,7 @@ a \code{list} contains a \code{matrix} used for NMF de-composition.
 Tally a variation object like \link{MAF}, \link{CopyNumber} and return a matrix for NMF de-composition and more.
 This is a generic function,
 so it can be further extended to other mutation cases.
-Please read details about how to set sex for identifying copy number signatures.
+\strong{Please read details about how to set sex for identifying copy number signatures}.
 Please read \url{https://osf.io/s93d5/} for the generation of SBS, DBS and ID (INDEL)
 components. \strong{Of note, many options are designed for method "M" only, and they are highlighted
 by bold fonts} (you can ignore them if you don't use "M" method).

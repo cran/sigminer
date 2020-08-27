@@ -1,5 +1,47 @@
+# sigminer 1.0.13
+
+- Supported `BSgenome.Hsapiens.1000genomes.hs37d5` in `sig_tally()`.
+- Remove changing `MT` to `M` in mutation data.
+- Fixed bug in extract numeric signature names and signature orderings in `show_sig_exposure()`.
+- Added `letter_colors` as an unexported discrete palette.
+
+# sigminer 1.0.12
+
+- Added `transform_seg_table()`.
+- Added `show_cn_group_profile()`.
+- Added `show_cn_freq_circos()`.
+- `sig_orders` option in `show_sig_profile()` function now can select and order signatures to plot.
+- Added `show_sig_profile_loop()` for better signature profile visualization.
+
+# sigminer 1.0.11
+
+- Added option to control the SigProfilerExtractor to avoid issue in docker image build.
+
+# sigminer 1.0.10
+
+- Some updates.
+- Compatible with SigProfiler 1.0.15
+
+# sigminer 1.0.9
+
+- Tried to speed up joining adjacent segments in `read_copynumber()`, got 200% improvement.
+
+# sigminer 1.0.8
+
+- Tried to speed up joining adjacent segments in `read_copynumber()`, got 20% improvement.
+- Added `cosine()` function.
+- Added and exported `get_sig_db()` to let users directly load signature database.
+- Added `sigprofiler_extract()` and `sigprofiler_import()` to call SigProfiler and import results.
+- Added `read_vcf()` for simply reading VCF files.
+- Implemented DBS-1248.
+- Added `show_sig_profile_heatmap()`.
+- Supported mouse genome 'mm10' ([#241](https://github.com/ShixiangWang/sigminer/issues/241)).
+- Added `read_copynumber_seqz()` to read sequenza result directory.
+- Speed up the annotation process in `read_copynumber()`.
+
 # sigminer 1.0.7
 
+- Fixed bug in OsCN feature calculation.
 - Removed useless options in `read_maf()`.
 - Modify method 'LS' in `sig_fit()` to 'NNLS' and implement it with **pracma** package ([#216](https://github.com/ShixiangWang/sigminer/issues/216)).
 - Made `use_all` option in `read_copynumber()` working correctly.

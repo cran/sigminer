@@ -6,7 +6,8 @@
 #' and "SBS" - which includes updated/refined 65 signatures. This function is modified
 #' from `compareSignatures()` in **maftools** package.
 #'
-#' @param Signature a `Signature` object or a component-by-signature matrix (sum of each column is 1).
+#' @param Signature a `Signature` object or a component-by-signature matrix (sum of each column is 1)
+#' or a normalized component-by-sample matirx (sum of each column is 1).
 #' More please see examples.
 #' @param Ref default is `NULL`, can be a same object as `Signature`.
 #' @param sig_db can be 'legacy' (for COSMIC v2 'SBS'),
@@ -27,7 +28,7 @@
 #' @inheritParams sig_tally
 #' @author Shixiang Wang <w_shixiang@163.com>
 #'
-#' @return a `list` containing smilarities, aetiologies if available, and best match.
+#' @return a `list` containing smilarities, aetiologies if available, best match and RSS.
 #' @export
 #'
 #' @examples
@@ -54,10 +55,10 @@
 #'
 #' ## Same to DBS and ID signatures
 #' @testexamples
-#' expect_equal(length(s1), 3L)
-#' expect_equal(length(s2), 3L)
-#' expect_equal(length(s3), 3L)
-#' expect_equal(length(s4), 3L)
+#' expect_equal(length(s1), 4L)
+#' expect_equal(length(s2), 4L)
+#' expect_equal(length(s3), 4L)
+#' expect_equal(length(s4), 4L)
 get_sig_similarity <- function(Signature, Ref = NULL,
                                sig_db = "legacy",
                                db_type = c("", "human-exome", "human-genome"),
@@ -96,29 +97,9 @@ get_sig_similarity <- function(Signature, Ref = NULL,
   method <- match.arg(arg = method, choices = c("cosine"))
 
   if (is.null(Ref)) {
-    db_file <- switch(
-      sig_db,
-      legacy = system.file("extdata", "legacy_signatures.RDs",
-        package = "maftools", mustWork = TRUE
-      ),
-      SBS = system.file("extdata", "SBS_signatures.RDs",
-        package = "maftools", mustWork = TRUE
-      ),
-      DBS = system.file("extdata", "DBS_signatures.rds",
-        package = "sigminer", mustWork = TRUE
-      ),
-      ID = system.file("extdata", "ID_signatures.rds",
-        package = "sigminer", mustWork = TRUE
-      ),
-      TSB = system.file("extdata", "TSB_signatures.rds",
-        package = "sigminer", mustWork = TRUE
-      )
-    )
-    sigs_db <- readRDS(file = db_file)
+    sigs_db <- get_sig_db(sig_db)
     sigs <- sigs_db$db
     aetiology <- sigs_db$aetiology
-
-    sigs <- apply(sigs, 2, function(x) x / sum(x))
 
     ## Some extra processing
     if (sig_db == "legacy" & db_type == "human-genome") {
@@ -180,20 +161,19 @@ get_sig_similarity <- function(Signature, Ref = NULL,
     }
   }
 
-  if (method == "cosine") {
-    corMat <- c()
-    for (i in 1:ncol(w)) {
-      sig <- w[, i]
-      corMat <- rbind(corMat, apply(sigs, 2, function(x) {
-        round(crossprod(sig, x) / sqrt(crossprod(x) * crossprod(sig)),
-          digits = 3
-        )
-      }))
-    }
-    rownames(corMat) <- colnames(w)
-  } else {
-    # Other methods
+  corMat <- round(cosineMatrix(w, sigs), digits = 3)
+  rownames(corMat) <- colnames(w)
+  colnames(corMat) <- colnames(sigs)
+
+  RssMat <- c()
+  for (i in 1:ncol(w)) {
+    sig <- w[, i]
+    RssMat <- rbind(RssMat, apply(sigs, 2, function(x) {
+      round(sum((sig - x)^2), digits = 6)
+    }))
   }
+  rownames(RssMat) <- colnames(w)
+  colnames(RssMat) <- colnames(sigs)
 
   if (!exists("aetiology")) {
     aetiology <- NULL
@@ -248,9 +228,57 @@ get_sig_similarity <- function(Signature, Ref = NULL,
   res <- list(
     similarity = corMat,
     aetiology_db = ifelse(!is.null(aetiology), aetiology, NA),
-    best_match = best_matches
+    best_match = best_matches,
+    rss = RssMat
   )
   class(res) <- c("similarity", class(res))
 
   invisible(res)
+}
+
+
+# Get Reference Signature Database ----------------------------------------
+
+#' Obtain Reference Signatures
+#'
+#' The signatures and their aetiologies mainly obtained from COSMIC database and cleaned before saving into
+#' **sigminer** package.
+#'
+#' @inheritParams get_sig_similarity
+#'
+#' @return a `list`.
+#' @export
+#' @seealso [get_sig_similarity], [sig_fit] and [show_cosmic_sig_profile].
+#'
+#' @examples
+#' s1 <- get_sig_db()
+#' s2 <- get_sig_db("DBS")
+#' s1
+#' s2
+#' @testexamples
+#' expect_is(s1, "list")
+#' expect_is(s2, "list")
+get_sig_db <- function(sig_db = "legacy") {
+  db_file <- switch(
+    sig_db,
+    legacy = system.file("extdata", "legacy_signatures.RDs",
+      package = "maftools", mustWork = TRUE
+    ),
+    SBS = system.file("extdata", "SBS_signatures.RDs",
+      package = "maftools", mustWork = TRUE
+    ),
+    DBS = system.file("extdata", "DBS_signatures.rds",
+      package = "sigminer", mustWork = TRUE
+    ),
+    ID = system.file("extdata", "ID_signatures.rds",
+      package = "sigminer", mustWork = TRUE
+    ),
+    TSB = system.file("extdata", "TSB_signatures.rds",
+      package = "sigminer", mustWork = TRUE
+    )
+  )
+  sigs_db <- readRDS(file = db_file)
+  ## Make sure column-sum is 1, i.e. normalized
+  sigs_db$db <- apply(sigs_db$db, 2, function(x) x / sum(x))
+  sigs_db
 }

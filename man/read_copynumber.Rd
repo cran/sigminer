@@ -11,10 +11,11 @@ read_copynumber(
   seg_cols = c("Chromosome", "Start.bp", "End.bp", "modal_cn"),
   samp_col = "sample",
   join_adj_seg = TRUE,
+  skip_annotation = FALSE,
   use_all = FALSE,
   min_segnum = 0L,
   max_copynumber = 20L,
-  genome_build = c("hg19", "hg38"),
+  genome_build = c("hg19", "hg38", "mm10"),
   genome_measure = c("called", "wg"),
   complement = TRUE,
   ...
@@ -28,7 +29,7 @@ read_copynumber(
 
 \item{ignore_case}{logical. Should pattern-matching be case-insensitive?}
 
-\item{seg_cols}{four characters used to specify chromosome, start position,
+\item{seg_cols}{four strings used to specify chromosome, start position,
 end position and copy number value in \code{input}, respectively.
 Default use names from ABSOLUTE calling result.}
 
@@ -41,13 +42,16 @@ same copy number value. This is helpful for precisely count the number of breakp
 When set \code{use_all=TRUE}, the mean function will be applied to extra numeric columns
 and unique string columns will be pasted by comma for joined records.}
 
+\item{skip_annotation}{if \code{TRUE}, skip annotation step, it may affect some analysis
+and visualization functionality, but speed up reading data.}
+
 \item{use_all}{default is \code{FALSE}. If \code{True}, use all columns from raw input.}
 
 \item{min_segnum}{minimal number of copy number segments within a sample.}
 
 \item{max_copynumber}{bigger copy number within a sample will be reset to this value.}
 
-\item{genome_build}{genome build version, should be 'hg19' or 'hg38'.}
+\item{genome_build}{genome build version, should be 'hg19', 'hg38' or 'mm10'.}
 
 \item{genome_measure}{default is 'called', can be 'wg' or 'called'.
 Set 'called' will use called segments size to compute total size for CNA burden calculation,
@@ -64,7 +68,8 @@ a \link{CopyNumber} object.
 }
 \description{
 Read \strong{absolute} copy number profile for preparing CNV signature
-analysis.
+analysis. See detail part of \code{\link[=sig_tally]{sig_tally()}} to see how to handle sex to get correct
+summary.
 }
 \examples{
 # Load toy dataset of absolute copynumber profile

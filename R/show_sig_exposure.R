@@ -55,8 +55,6 @@ show_sig_exposure <- function(Signature,
                               rm_panel_border = FALSE,
                               hide_samps = TRUE,
                               legend_position = "top") {
-
-  # TODO: add group (#108)
   if (class(Signature) == "Signature") {
     h <- Signature$Exposure
   } else if (is.matrix(Signature)) {
@@ -76,6 +74,13 @@ show_sig_exposure <- function(Signature,
   style <- match.arg(style)
 
   h.norm <- apply(h, 2, function(x) x / sum(x))
+  h.norm[is.na(h.norm)] <- 0
+
+  if (nrow(h) == 1) {
+    h.norm <- as.matrix(h.norm) %>% t()
+    rownames(h.norm) <- rownames(h)
+  }
+
   h <- as.data.frame(h)
   h.norm <- as.data.frame(h.norm)
 
@@ -127,7 +132,7 @@ show_sig_exposure <- function(Signature,
 
   if (is.null(sig_names)) {
     # chop Signature off
-    rownames(h.norm) <- rownames(h) <- sub(".*[^\\d+](\\d+)$", "\\1", rownames(h))
+    rownames(h.norm) <- rownames(h) <- gsub("[^0-9]", "",  rownames(h))
   } else {
     rownames(h.norm) <- rownames(h) <- sig_names
   }
@@ -147,6 +152,9 @@ show_sig_exposure <- function(Signature,
   if (!is.null(sig_names)) {
     x1$Signature <- factor(x1$Signature, levels = sig_names)
     x2$Signature <- factor(x2$Signature, levels = sig_names)
+  } else {
+    x1$Signature <- factor(x1$Signature, levels = rownames(h))
+    x2$Signature <- factor(x2$Signature, levels = rownames(h))
   }
 
   x1$class0 <- "Est_Counts"

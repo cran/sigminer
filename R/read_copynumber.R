@@ -2,12 +2,13 @@
 
 #' @title  Read Absolute Copy Number Profile
 #' @description Read **absolute** copy number profile for preparing CNV signature
-#' analysis.
+#' analysis. See detail part of [sig_tally()] to see how to handle sex to get correct
+#' summary.
 #' @param input a `data.frame` or a file or a directory contains copy number profile.
 #' @param pattern an optional regular expression used to select part of files if
 #' `input` is a directory, more detail please see [list.files] function.
 #' @param ignore_case logical. Should pattern-matching be case-insensitive?
-#' @param seg_cols four characters used to specify chromosome, start position,
+#' @param seg_cols four strings used to specify chromosome, start position,
 #'  end position and copy number value in `input`, respectively.
 #'  Default use names from ABSOLUTE calling result.
 #' @param samp_col a character used to specify the sample column name. If `input`
@@ -17,10 +18,12 @@
 #' same copy number value. This is helpful for precisely count the number of breakpoint.
 #' When set `use_all=TRUE`, the mean function will be applied to extra numeric columns
 #' and unique string columns will be pasted by comma for joined records.
+#' @param skip_annotation if `TRUE`, skip annotation step, it may affect some analysis
+#' and visualization functionality, but speed up reading data.
 #' @param use_all default is `FALSE`. If `True`, use all columns from raw input.
 #' @param min_segnum minimal number of copy number segments within a sample.
 #' @param max_copynumber bigger copy number within a sample will be reset to this value.
-#' @param genome_build genome build version, should be 'hg19' or 'hg38'.
+#' @param genome_build genome build version, should be 'hg19', 'hg38' or 'mm10'.
 #' @param genome_measure default is 'called', can be 'wg' or 'called'.
 #' Set 'called' will use called segments size to compute total size for CNA burden calculation,
 #' this option is useful for WES and target sequencing.
@@ -59,10 +62,11 @@ read_copynumber <- function(input,
                             seg_cols = c("Chromosome", "Start.bp", "End.bp", "modal_cn"),
                             samp_col = "sample",
                             join_adj_seg = TRUE,
+                            skip_annotation = FALSE,
                             use_all = FALSE,
                             min_segnum = 0L,
                             max_copynumber = 20L,
-                            genome_build = c("hg19", "hg38"),
+                            genome_build = c("hg19", "hg38", "mm10"),
                             genome_measure = c("called", "wg"),
                             complement = TRUE,
                             ...) {
@@ -84,7 +88,11 @@ read_copynumber <- function(input,
   send_info("Genome measure: ", genome_measure, ".")
 
   # get chromosome lengths
-  valid_chr <- c(paste0("chr", 1:22), "chrX", "chrY")
+  if (genome_build == "mm10") {
+    valid_chr <- c(paste0("chr", 1:19), "chrX", "chrY")
+  } else {
+    valid_chr <- c(paste0("chr", 1:22), "chrX", "chrY")
+  }
   chrlen <- get_genome_annotation(
     data_type = "chr_size",
     chrs = valid_chr,
@@ -154,10 +162,10 @@ read_copynumber <- function(input,
         x = as.character(chromosome),
         ignore.case = TRUE
       )]
-      if (any(!grepl("chr", temp$chromosome))) {
-        temp$chromosome[!grepl("chr", temp$chromosome)] <-
-          paste0("chr", temp$chromosome[!grepl("chr", temp$chromosome)])
-      }
+      temp$chromosome <- ifelse(startsWith(temp$chromosome, "chr"),
+        temp$chromosome,
+        paste0("chr", temp$chromosome)
+      )
       temp[, chromosome := sub(
         pattern = "x",
         replacement = "X",
@@ -255,6 +263,10 @@ read_copynumber <- function(input,
 
     send_success("Column order set.")
 
+    if (is.factor(temp$sample)) {
+      temp$sample <- as.character(temp$sample)
+    }
+
     if (any(is.na(temp$segVal))) {
       temp <- temp[!is.na(temp$segVal)]
       send_success("Rows with NA copy number removed.")
@@ -350,26 +362,39 @@ read_copynumber <- function(input,
   data_df$start <- as.numeric(data_df$start)
   data_df$end <- as.numeric(data_df$end)
 
+  data.table::setorderv(data_df, c("sample", "chromosome", "start"))
+  send_success("Segments sorted.")
+
   if (join_adj_seg) {
-    data_df <- helper_join_segments(data_df)
-    send_success("Adjacent segments with same copy number value joined")
+    send_info("Joining adjacent segments with same copy number value. Be patient...")
+    data_df <- helper_join_segments2(data_df)
+    send_success(nrow(data_df), " segments left after joining.")
+  } else {
+    send_info("Skipped joining adjacent segments with same copy number value.")
   }
   # order by segment start position by each chromosome in each sample
-  data_df <- data_df[, .SD[order(.SD$start, decreasing = FALSE)], by = c("sample", "chromosome")]
-  all_cols <- colnames(data_df)
-  data.table::setcolorder(data_df, neworder = c(c("chromosome", "start", "end", "segVal", "sample"),
-                                                setdiff(all_cols, c("chromosome", "start", "end", "segVal", "sample"))))
+  data.table::setorderv(data_df, c("sample", "chromosome", "start"))
+  data.table::setcolorder(data_df, c("chromosome", "start", "end", "segVal", "sample"))
+
+  if ("groups" %in% names(attributes(data_df))) {
+    attr(data_df, "groups") <- NULL
+  }
 
   send_success("Segmental table cleaned.")
 
-  send_info("Annotating.")
-  annot <- get_LengthFraction(data_df,
-    genome_build = genome_build,
-    seg_cols = new_cols[1:4],
-    samp_col = new_cols[5]
-  )
-  message()
-  send_success("Annotation done.")
+  if (skip_annotation) {
+    annot <- data.table::data.table()
+    send_info("Annotation skipped.")
+  } else {
+    send_info("Annotating.")
+    annot <- get_LengthFraction(data_df,
+      genome_build = genome_build,
+      seg_cols = new_cols[1:4],
+      samp_col = new_cols[5]
+    )
+    send_success("Annotation done.")
+  }
+
 
   send_info("Summarizing per sample.")
   sum_sample <- get_cnsummary_sample(data_df,
@@ -403,6 +428,12 @@ utils::globalVariables(
     ".",
     "N",
     ".N",
-    ".SD"
+    ".SD",
+    "flag",
+    "p_start",
+    "p_end",
+    "q_start",
+    "q_end",
+    "total_size"
   )
 )

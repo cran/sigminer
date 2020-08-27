@@ -317,24 +317,6 @@ generate_matrix_DBS <- function(query, ref_genome, genome_build = "hg19", add_tr
     "AA>TG", "AA>GG", "AA>CG", "AA>TC", "AA>GC", "AA>CC"
   )
 
-  matrix <- data.frame(
-    mutation_type = as.character(conv),
-    reverse = names(conv),
-    stringsAsFactors = F
-  )
-
-  catalog_df <- matrix %>%
-    dplyr::mutate(U = "U", N = "N", T = "T", B = "B", Q = "Q") %>%
-    tidyr::pivot_longer(c("U", "N", "T", "B", "Q"), names_to = "type", values_to = "value") %>%
-    dplyr::select(-.data$type) %>%
-    dplyr::mutate(
-      mutation_type = paste(.data$value, .data$mutation_type, sep = ":"),
-      reverse = paste(.data$value, .data$reverse, sep = ":")
-    ) %>%
-    dplyr::filter((!substr(.data$mutation_type, 3, 4) %in% c("TC", "TT", "CT", "CC") & substr(.data$mutation_type, 1, 1) == "Q") |
-      substr(.data$mutation_type, 3, 4) %in% c("TC", "TT", "CT", "CC") & substr(.data$mutation_type, 1, 1) != "Q") %>%
-    dplyr::select(-.data$value)
-
   ## Search for DBS
   send_info("Searching DBS records...")
   query <- query[, search_DBS(.SD), by = Tumor_Sample_Barcode]
@@ -349,8 +331,41 @@ generate_matrix_DBS <- function(query, ref_genome, genome_build = "hg19", add_tr
   query[, dbsMotif := factor(dbsMotif, levels = as.character(conv))]
   query[, should_reverse := substr(dbsMotif, 1, 2) != substr(dbs, 1, 2)]
 
+  ## Query sequence
+  query[, upstream := as.character(
+    BSgenome::getSeq(
+      x = ref_genome,
+      names = Chromosome,
+      start = Start_Position - 1,
+      end = Start_Position - 1
+    )
+  )]
+  query[, downstream := as.character(
+    BSgenome::getSeq(
+      x = ref_genome,
+      names = Chromosome,
+      start = Start_Position + 2,
+      end = Start_Position + 2
+    )
+  )]
+  send_success("Reference sequences queried from genome.")
+
+  query$complexMotif <- paste0(query$upstream, "[", query$dbsMotif, "]", query$downstream)
+  query$complexMotif <- factor(query$complexMotif,
+    levels = vector_to_combination(
+      c("A", "C", "G", "T"),
+      "[",
+      levels(query$dbsMotif),
+      "]",
+      c("A", "C", "G", "T")
+    )
+  )
+
   DBS_78 <- records_to_matrix(query, "Tumor_Sample_Barcode", "dbsMotif") %>% as.matrix()
   send_success("DBS-78 matrix created.")
+
+  DBS_1248 <- records_to_matrix(query, "Tumor_Sample_Barcode", "complexMotif") %>% as.matrix()
+  send_success("DBS-1248 matrix created.")
 
   if (add_trans_bias) {
     query$End_Position <- query$Start_Position + 1
@@ -365,7 +380,8 @@ generate_matrix_DBS <- function(query, ref_genome, genome_build = "hg19", add_tr
       nmf_matrix = DBS_186,
       all_matrices = list(
         DBS_78 = DBS_78,
-        DBS_186 = DBS_186
+        DBS_186 = DBS_186,
+        DBS_1248 = DBS_1248
       )
     )
   } else {
@@ -373,7 +389,8 @@ generate_matrix_DBS <- function(query, ref_genome, genome_build = "hg19", add_tr
     res <- list(
       nmf_matrix = DBS_78,
       all_matrices = list(
-        DBS_78 = DBS_78
+        DBS_78 = DBS_78,
+        DBS_1248 = DBS_1248
       )
     )
   }
@@ -612,7 +629,7 @@ generate_matrix_INDEL <- function(query, ref_genome, genome_build = "hg19", add_
 
 records_to_matrix <- function(dt, samp_col, component_col, add_trans_bias = FALSE, build = "hg19", mode = "SBS") {
   if (add_trans_bias) {
-    transcript_dt <- get(paste0("transcript.", build), envir = as.environment("package:sigminer"))
+    transcript_dt <- get_genome_annotation(data_type = "transcript", genome_build = build)
     data.table::setkey(transcript_dt, chrom, start, end)
 
     if ("Start" %in% colnames(dt)) {
@@ -724,12 +741,12 @@ records_to_matrix <- function(dt, samp_col, component_col, add_trans_bias = FALS
   mat
 }
 
-vector_to_combination <- function(...) {
+vector_to_combination <- function(..., c_string = "") {
   expand.grid(
     ...,
     stringsAsFactors = FALSE
   ) %>%
-    apply(1, paste0, collapse = "") %>%
+    apply(1, paste0, collapse = c_string) %>%
     unique()
 }
 

@@ -38,7 +38,7 @@
 show_cn_circos <- function(data, samples = NULL,
                            show_title = TRUE,
                            chrs = paste0("chr", 1:22),
-                           genome_build = c("hg19", "hg38"),
+                           genome_build = c("hg19", "hg38", "mm10"),
                            col = NULL,
                            side = "inside",
                            ...) {
@@ -67,8 +67,9 @@ show_cn_circos <- function(data, samples = NULL,
   if (inherits(data, "CopyNumber")) {
     genome_build <- data@genome_build
     data <- data@data
+  } else {
+    data <- data.table::as.data.table(data)
   }
-  data.table::setDT(data)
 
   # Filter data
   if (!is.null(samples)) {

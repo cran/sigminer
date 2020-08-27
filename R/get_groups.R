@@ -56,9 +56,11 @@ get_groups <- function(Signature,
                        method = c("consensus", "k-means", "exposure", "samples"),
                        n_cluster = NULL,
                        match_consensus = TRUE) {
-  fit_flag = data.table::is.data.table(Signature)
-  stopifnot(inherits(Signature, "Signature") | fit_flag,
-            is.null(n_cluster) | n_cluster > 1)
+  fit_flag <- data.table::is.data.table(Signature)
+  stopifnot(
+    inherits(Signature, "Signature") | fit_flag,
+    is.null(n_cluster) | n_cluster > 1
+  )
   method <- match.arg(method)
 
   timer <- Sys.time()
@@ -73,11 +75,10 @@ get_groups <- function(Signature,
     }
     send_success("Method checked.")
 
-    if (purrr::map_lgl(Signature, ~ifelse(is.numeric(.), any(. > 1), FALSE)) %>% any()) {
+    if (purrr::map_lgl(Signature, ~ ifelse(is.numeric(.), any(. > 1), FALSE)) %>% any()) {
       send_stop("When input is {.code data.table} (from sig_fit), a relative exposure result is valid.")
     }
     send_success("Exposure should be relative checked.")
-
   } else {
     send_success("'Signature' object detected.")
   }
@@ -119,7 +120,7 @@ get_groups <- function(Signature,
     }
     nmfObj <- Signature$Raw$nmf_obj
     predict.samples <- predict(nmfObj, what = "samples", prob = T)
-    silhouette.samples <- silhouette(nmfObj, what = "samples")
+    silhouette.samples <- cluster::silhouette(nmfObj, what = "samples")
     data <- data.frame(
       sample = names(predict.samples$predict),
       group = predict.samples$predict,
@@ -141,7 +142,7 @@ get_groups <- function(Signature,
       expo_df <- get_sig_exposure(Signature, type = "relative")
     }
 
-    sig_names = colnames(expo_df)[-1]
+    sig_names <- colnames(expo_df)[-1]
     common_prefix <- Biobase::lcPrefixC(sig_names)
     mps <- seq_along(sig_names)
     names(mps) <- sig_names
@@ -175,7 +176,13 @@ get_groups <- function(Signature,
       tibble::column_to_rownames("sample")
     n_cluster <- ifelse(is.null(n_cluster), ncol(contrib), n_cluster)
     send_info("Running k-means with ", n_cluster, " clusters...")
-    contrib.km <- kmeans(x = contrib, centers = n_cluster)
+    contrib.km <- tryCatch(
+      kmeans(x = contrib, centers = n_cluster),
+      error = function(e) {
+        stop("A improper cluster number is set!", call. = FALSE)
+      }
+    )
+    sil_width <- cluster::silhouette(contrib.km$cluster, cluster::daisy(contrib))
     send_info("Generating a table of group and signature contribution (stored in 'map_table' attr):")
     ztable <- contrib.km$centers
     print(ztable)
@@ -187,14 +194,12 @@ get_groups <- function(Signature,
     colnames(cluster_df)[1] <- "group"
     data <- as.data.frame(contrib.km$cluster)
     colnames(data)[1] <- "group"
+    data$silhouette_width <- signif(sil_width[, "sil_width"], 3)
     data.table::setDT(data, keep.rownames = TRUE)
     colnames(data)[1] <- "sample"
     data$group <- as.character(data$group)
     data <- merge(data, cluster_df, by = "group")
-    # Set a default value for now
-    # data$weight <- 1L
-    # data.table::setcolorder(data, neworder = c("sample", "group", "weight", "enrich_sig"))
-    data.table::setcolorder(data, neworder = c("sample", "group", "enrich_sig"))
+    data.table::setcolorder(data, neworder = c("sample", "group", "silhouette_width", "enrich_sig"))
   }
 
   data <- data.table::as.data.table(data)
@@ -216,8 +221,10 @@ get_groups <- function(Signature,
     attr(data, "map_table") <- ztable
   }
 
-  send_warning("The 'enrich_sig' column is set to dominant signature in one group, ",
-               "please check and make it consistent with biological meaning (correct it by hand if necessary).")
+  send_warning(
+    "The 'enrich_sig' column is set to dominant signature in one group, ",
+    "please check and make it consistent with biological meaning (correct it by hand if necessary)."
+  )
   return(data)
 }
 

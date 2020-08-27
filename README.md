@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# sigminer: an easy-to-use and scalable toolkit for genomic alteration signature analysis and visualization in R <img src="man/figures/logo.png" align="right"  height="140" width="120" alt="logo"/>
+# Sigminer: Mutational Signature Analysis and Visualization in R <img src="man/figures/logo.png" align="right"  height="140" width="120" alt="logo"/>
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/sigminer)](https://cran.r-project.org/package=sigminer)
@@ -93,7 +93,7 @@ remotes::install_git("https://gitee.com/ShixiangWang/sigminer", dependencies = T
 
 A complete documentation of **sigminer** can be read online at
 <https://shixiangwang.github.io/sigminer-doc/> (For Chinese users, you
-can also read it at <https://shixiangwang.gitee.io/sigminer-doc>). All
+can also read it at <https://shixiangwang.gitee.io/sigminer-doc/>). All
 functions are well organized and documented at
 <https://shixiangwang.github.io/sigminer/reference/index.html> (For
 Chinese users, you can also read it at
@@ -108,7 +108,7 @@ its documentation.
 ***Wang, Shixiang, et al. “Copy number signature analyses in prostate
 cancer reveal distinct etiologies and clinical outcomes” medRxiv
 (2020)***
-<https://www.medrxiv.org/content/early/2020/04/29/2020.04.27.20082404>
+<https://www.medrxiv.org/content/10.1101/2020.04.27.20082404v1>
 
 -----
 

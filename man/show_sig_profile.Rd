@@ -12,7 +12,7 @@ show_sig_profile(
   filters = NULL,
   feature_setting = sigminer::CN.features,
   style = c("default", "cosmic"),
-  palette = use_color_style(style, mode),
+  palette = use_color_style(style, mode, method),
   set_gradient_color = FALSE,
   free_space = "free_x",
   rm_panel_border = style == "cosmic",
@@ -20,8 +20,8 @@ show_sig_profile(
   bar_border_color = ifelse(style == "default", "grey50", "white"),
   bar_width = 0.7,
   paint_axis_text = TRUE,
-  x_label_angle = ifelse(mode == "copynumber", 60, 90),
-  x_label_vjust = 1,
+  x_label_angle = ifelse(mode == "copynumber" & !startsWith(method, "T"), 60, 90),
+  x_label_vjust = ifelse(mode == "copynumber" & !startsWith(method, "T"), 1, 0.5),
   x_label_hjust = 1,
   x_lab = "Components",
   y_lab = "auto",
@@ -46,7 +46,7 @@ representing signatures (column names must start with 'Sig').}
 \item{mode}{signature type for plotting, now supports 'copynumber', 'SBS', 'DBS' and 'ID'.}
 
 \item{method}{method for copy number feature classfication in \link{sig_tally},
-can be one of "Macintyre" ("M") and "Wang" ("W").}
+can be one of "Macintyre" ("M"), "Wang" ("W").}
 
 \item{normalize}{one of 'row', 'column', 'raw' and "feature", for row normalization (signature),
 column normalization (component), raw data, row normalization by feature, respectively.
@@ -119,7 +119,8 @@ data.}
 Default is \code{NULL}, prefix 'Sig_' plus number is used.}
 
 \item{sig_orders}{set order of signatures, can be a character vector.
-Default is \code{NULL}, the signatures are ordered by alphabetical order.}
+Default is \code{NULL}, the signatures are ordered by alphabetical order.
+If an integer vector set, only specified signatures are plotted.}
 
 \item{check_sig_names}{if \code{TRUE}, check signature names when input is
 a matrix, i.e., all signatures (colnames) must start with 'Sig'.}
@@ -179,6 +180,9 @@ p4 <- show_sig_profile(sig,
   params = params, y_expand = 2
 )
 p4
+}
+\seealso{
+\link{show_sig_profile_loop}, \link{show_sig_profile_heatmap}
 }
 \author{
 Shixiang Wang

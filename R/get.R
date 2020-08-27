@@ -22,8 +22,14 @@ get_cnlist <- function(CopyNumber, ignore_chrs = NULL, add_index = FALSE) {
     all_cols <- colnames(data)
     data.table::setcolorder(data, neworder = c(req_cols, setdiff(all_cols, req_cols)))
   } else {
-    data <- data.table::copy(CopyNumber@data)
+    data <- CopyNumber@data
   }
+
+  if (add_index) {
+    data$Index <- seq(1, nrow(data))
+    send_success("Generated 'Index' column to track the copy number segment location.")
+  }
+
   if (!is.null(ignore_chrs)) {
     chrs_exist <- ignore_chrs %in% unique(data$chromosome)
     if (!any(chrs_exist)) {
@@ -37,10 +43,6 @@ get_cnlist <- function(CopyNumber, ignore_chrs = NULL, add_index = FALSE) {
     }
   }
 
-  if (add_index) {
-    data$Index <- seq(1, nrow(data))
-  }
-
   res <- split(data, by = "sample")
   res
 }
@@ -49,7 +51,7 @@ get_cnlist <- function(CopyNumber, ignore_chrs = NULL, add_index = FALSE) {
 
 get_features <- function(CN_data,
                          cores = 1,
-                         genome_build = c("hg19", "hg38")) {
+                         genome_build = c("hg19", "hg38", "mm10")) {
   genome_build <- match.arg(genome_build)
   # get chromosome lengths and centromere locations
   chrlen <- get_genome_annotation(data_type = "chr_size", genome_build = genome_build)
@@ -98,7 +100,7 @@ get_features <- function(CN_data,
 
 get_features_wang <- function(CN_data,
                               cores = 1,
-                              genome_build = c("hg19", "hg38"),
+                              genome_build = c("hg19", "hg38", "mm10"),
                               feature_setting = sigminer::CN.features) {
   genome_build <- match.arg(genome_build)
   # get chromosome lengths and centromere locations
@@ -301,7 +303,7 @@ get_matrix <- function(CN_features,
 # Get copy number length profile ------------------------------------------
 
 get_LengthFraction <- function(CN_data,
-                               genome_build = c("hg19", "hg38"),
+                               genome_build = c("hg19", "hg38", "mm10"),
                                seg_cols = c("Chromosome", "Start.bp", "End.bp", "modal_cn"),
                                samp_col = "sample") {
   stopifnot(is.list(CN_data) | is.data.frame(CN_data))
@@ -350,14 +352,26 @@ get_LengthFraction <- function(CN_data,
     x = segTab$chromosome,
     ignore.case = TRUE
   )
-  if (any(!grepl("chr", segTab$chromosome))) {
-    segTab$chromosome[!grepl("chr", segTab$chromosome)] <- paste0("chr", segTab$chromosome[!grepl("chr", segTab$chromosome)])
-  }
 
-  valid_chr <- c(paste0("chr", 1:22), "chrX", "chrY")
-  if (!all(segTab$chromosome %in% valid_chr)) {
-    segTab <- segTab[valid_chr, on = "chromosome"]
-    send_success("Some invalid segments (not as 1:22 and X, Y) dropped.")
+  segTab$chromosome <- ifelse(startsWith(segTab$chromosome, "chr"),
+    segTab$chromosome,
+    paste0("chr", segTab$chromosome)
+  )
+
+  if (genome_build == "mm10") {
+    valid_chr <- c(paste0("chr", 1:19), "chrX", "chrY")
+
+    if (!all(segTab$chromosome %in% valid_chr)) {
+      segTab <- segTab[valid_chr, on = "chromosome"]
+      send_success("Some invalid segments (not as 1:19 and X, Y) dropped.")
+    }
+  } else {
+    valid_chr <- c(paste0("chr", 1:22), "chrX", "chrY")
+
+    if (!all(segTab$chromosome %in% valid_chr)) {
+      segTab <- segTab[valid_chr, on = "chromosome"]
+      send_success("Some invalid segments (not as 1:22 and X, Y) dropped.")
+    }
   }
 
   arm_data <- get_ArmLocation(genome_build)
@@ -365,94 +379,194 @@ get_LengthFraction <- function(CN_data,
 
   segTab <- data.table::merge.data.table(segTab, arm_data, by.x = "chromosome", by.y = "chrom", all.x = TRUE)
 
-  .annot_fun <- function(chrom, start, end, p_start, p_end, p_length, q_start, q_end, q_length, total_size) {
-    if (end <= p_end & start >= p_start) {
-      location <- paste0(sub("chr", "", chrom), "p")
-      annotation <- "short arm"
-      fraction <- (end - start + 1) / (p_end - p_start + 1)
-    } else if (end <= q_end &
-      start >= q_start) {
-      location <- paste0(sub("chr", "", chrom), "q")
-      annotation <- "long arm"
-      fraction <- (end - start + 1) / (q_end - q_start + 1)
-    } else if (start >= p_start &
-      start <= p_end &
-      end >= q_start & end <= q_end) {
-      location <- paste0(sub("chr", "", chrom), "pq") # across p and q arm
-      annotation <- "across short and long arm"
-      fraction <- 2 * ((end - start + 1) / total_size)
-    } else if (start < p_end & end < q_start) {
-      location <- paste0(sub("chr", "", chrom), "p")
-      annotation <- "short arm intersect with centromere region"
-      # only calculate region does not intersect
-      fraction <- (end - start + 1 - (end - p_end)) / (p_end - p_start + 1)
-    } else if (start > p_end &
-      start < q_start & end > q_start) {
-      location <- paste0(sub("chr", "", chrom), "q")
-      annotation <- "long arm intersect with centromere region"
-      # only calculate region does not intersect
-      fraction <- (end - start + 1 - (start - q_start)) / (q_end - q_start + 1)
-    } else {
-      location <- paste0(sub("chr", "", chrom), "pq") # suppose as pq
-      annotation <- "segment locate in centromere region"
-      fraction <- 2 * ((end - start + 1) / total_size)
-    }
-
-    dplyr::tibble(location = location, annotation = annotation, fraction = fraction)
-  }
-
-  annot_fun <- function(chrom, start, end, p_start, p_end, p_length, q_start,
-                        q_end, q_length, total_size, .pb = NULL) {
-    if (.pb$i < .pb$n) .pb$tick()$print()
-    .annot_fun(
-      chrom, start, end, p_start, p_end, p_length, q_start,
-      q_end, q_length, total_size
+  segTab[, flag := data.table::fifelse(
+    end <= p_end & start >= p_start,
+    1L,
+    data.table::fifelse(
+      end <= q_end & start >= q_start,
+      2L,
+      data.table::fifelse(
+        start >= p_start & start <= p_end & end >= q_start & end <= q_end,
+        3L,
+        data.table::fifelse(
+          start < p_end & end < q_start,
+          4L,
+          data.table::fifelse(
+            start > p_end & start < q_start & end > q_start,
+            5L,
+            6L
+          )
+        )
+      )
     )
-  }
+  )]
 
-  pb <- progress_estimated(nrow(segTab), 0)
+  segTab[, location := data.table::fifelse(
+    flag == 1L,
+    paste0(sub("chr", "", chromosome), "p"),
+    data.table::fifelse(
+      flag == 2L,
+      paste0(sub("chr", "", chromosome), "q"),
+      data.table::fifelse(
+        flag == 3L,
+        paste0(sub("chr", "", chromosome), "pq"),
+        data.table::fifelse(
+          flag == 4L,
+          paste0(sub("chr", "", chromosome), "p"),
+          data.table::fifelse(
+            flag == 5L,
+            paste0(sub("chr", "", chromosome), "q"),
+            paste0(sub("chr", "", chromosome), "pq")
+          )
+        )
+      )
+    )
+  )]
 
-  annot <- purrr::pmap_df(
-    list(
-      chrom = segTab$chromosome,
-      start = segTab$start,
-      end = segTab$end,
-      p_start = segTab$p_start,
-      p_end = segTab$p_end,
-      p_length = segTab$p_length,
-      q_start = segTab$q_start,
-      q_end = segTab$q_end,
-      q_length = segTab$q_length,
-      total_size = segTab$total_size
-    ), annot_fun,
-    .pb = pb
-  )
+  segTab[, annotation := data.table::fifelse(
+    flag == 1L,
+    "short arm",
+    data.table::fifelse(
+      flag == 2L,
+      "long arm",
+      data.table::fifelse(
+        flag == 3L,
+        "across short and long arm",
+        data.table::fifelse(
+          flag == 4L,
+          "short arm intersect with centromere region",
+          data.table::fifelse(
+            flag == 5L,
+            "long arm intersect with centromere region",
+            "segment locate in centromere region"
+          )
+        )
+      )
+    )
+  )]
 
-  cbind(
-    data.table::as.data.table(segTab)[, colnames(arm_data)[-1] := NULL],
-    data.table::as.data.table(annot)
-  )
+  segTab[, fraction := data.table::fifelse(
+    flag == 1L,
+    (end - start + 1) / (p_end - p_start + 1),
+    data.table::fifelse(
+      flag == 2L,
+      (end - start + 1) / (q_end - q_start + 1),
+      data.table::fifelse(
+        flag == 3L,
+        2 * ((end - start + 1) / total_size),
+        data.table::fifelse(
+          flag == 4L,
+          (end - start + 1 - (end - p_end)) / (p_end - p_start + 1),
+          data.table::fifelse(
+            flag == 5L,
+            (end - start + 1 - (start - q_start)) / (q_end - q_start + 1),
+            2 * ((end - start + 1) / total_size)
+          )
+        )
+      )
+    )
+  )]
+
+  segTab[, c(colnames(arm_data)[-1], "flag") := NULL]
+  segTab
+
+
+  # .annot_fun <- function(chrom, start, end, p_start, p_end, p_length, q_start, q_end, q_length, total_size) {
+  #   if (end <= p_end & start >= p_start) {
+  #     ## 1L
+  #     location <- paste0(sub("chr", "", chrom), "p")
+  #     annotation <- "short arm"
+  #     fraction <- (end - start + 1) / (p_end - p_start + 1)
+  #   } else if (end <= q_end &
+  #     start >= q_start) {
+  #     ## 2L
+  #     location <- paste0(sub("chr", "", chrom), "q")
+  #     annotation <- "long arm"
+  #     fraction <- (end - start + 1) / (q_end - q_start + 1)
+  #   } else if (start >= p_start &
+  #     start <= p_end &
+  #     end >= q_start & end <= q_end) {
+  #     ## 3L
+  #     location <- paste0(sub("chr", "", chrom), "pq") # across p and q arm
+  #     annotation <- "across short and long arm"
+  #     fraction <- 2 * ((end - start + 1) / total_size)
+  #   } else if (start < p_end & end < q_start) {
+  #     ## 4L
+  #     location <- paste0(sub("chr", "", chrom), "p")
+  #     annotation <- "short arm intersect with centromere region"
+  #     # only calculate region does not intersect
+  #     fraction <- (end - start + 1 - (end - p_end)) / (p_end - p_start + 1)
+  #   } else if (start > p_end &
+  #     start < q_start & end > q_start) {
+  #     ## 5L
+  #     location <- paste0(sub("chr", "", chrom), "q")
+  #     annotation <- "long arm intersect with centromere region"
+  #     # only calculate region does not intersect
+  #     fraction <- (end - start + 1 - (start - q_start)) / (q_end - q_start + 1)
+  #   } else {
+  #     ## 6L
+  #     location <- paste0(sub("chr", "", chrom), "pq") # suppose as pq
+  #     annotation <- "segment locate in centromere region"
+  #     fraction <- 2 * ((end - start + 1) / total_size)
+  #   }
+  #
+  #   dplyr::tibble(location = location, annotation = annotation, fraction = fraction)
+  # }
+  #
+  # annot_fun <- function(chrom, start, end, p_start, p_end, p_length, q_start,
+  #                       q_end, q_length, total_size, .pb = NULL) {
+  #   if (.pb$i < .pb$n) .pb$tick()$print()
+  #   .annot_fun(
+  #     chrom, start, end, p_start, p_end, p_length, q_start,
+  #     q_end, q_length, total_size
+  #   )
+  # }
+  #
+  # pb <- progress_estimated(nrow(segTab), 0)
+  #
+  # annot <- purrr::pmap_df(
+  #   list(
+  #     chrom = segTab$chromosome,
+  #     start = segTab$start,
+  #     end = segTab$end,
+  #     p_start = segTab$p_start,
+  #     p_end = segTab$p_end,
+  #     p_length = segTab$p_length,
+  #     q_start = segTab$q_start,
+  #     q_end = segTab$q_end,
+  #     q_length = segTab$q_length,
+  #     total_size = segTab$total_size
+  #   ), annot_fun,
+  #   .pb = pb
+  # )
+  #
+  # cbind(
+  #   data.table::as.data.table(segTab)[, colnames(arm_data)[-1] := NULL],
+  #   data.table::as.data.table(annot)
+  # )
 }
 
 
 # Get arm location --------------------------------------------------------
 
-get_ArmLocation <- function(genome_build = c("hg19", "hg38")) {
+get_ArmLocation <- function(genome_build = c("hg19", "hg38", "mm10")) {
   genome_build <- match.arg(genome_build)
   # get chromosome lengths and centromere locations
   chrlen <- get_genome_annotation(data_type = "chr_size", genome_build = genome_build)
   centromeres <- get_genome_annotation(data_type = "centro_loc", genome_build = genome_build)
 
+  l <- nrow(chrlen)
   # compute and get results
+  # different for human and mouse
   res <- data.frame(
-    chrom = vector(mode = "character", length = 24),
-    p_start = vector("numeric", length = 24),
-    p_end = vector("numeric", length = 24),
-    p_length = vector("numeric", length = 24),
-    q_start = vector("numeric", length = 24),
-    q_end = vector("numeric", length = 24),
-    q_length = vector("numeric", length = 24),
-    total_size = vector("numeric", length = 24),
+    chrom = vector(mode = "character", length = l),
+    p_start = vector("numeric", length = l),
+    p_end = vector("numeric", length = l),
+    p_length = vector("numeric", length = l),
+    q_start = vector("numeric", length = l),
+    q_end = vector("numeric", length = l),
+    q_length = vector("numeric", length = l),
+    total_size = vector("numeric", length = l),
     stringsAsFactors = FALSE
   )
 
@@ -490,7 +604,7 @@ get_ArmLocation <- function(genome_build = c("hg19", "hg38")) {
 
 # Get summary of copy number variation per sample ------------------------------------
 
-get_cnsummary_sample <- function(segTab, genome_build = c("hg19", "hg38"),
+get_cnsummary_sample <- function(segTab, genome_build = c("hg19", "hg38", "mm10"),
                                  genome_measure = c("called", "wg")) {
   genome_build <- match.arg(genome_build)
   genome_measure <- match.arg(genome_measure)
@@ -537,7 +651,11 @@ get_cnsummary_sample <- function(segTab, genome_build = c("hg19", "hg38"),
   segTab$start <- as.numeric(segTab$start)
   segTab$end <- as.numeric(segTab$end)
 
-  autosome <- paste0("chr", 1:22)
+  if (genome_build == "mm10") {
+    autosome <- paste0("chr", 1:19)
+  } else {
+    autosome <- paste0("chr", 1:22)
+  }
 
   if (genome_measure == "wg") {
     chrlen <- get_genome_annotation(

@@ -11,7 +11,7 @@
 #' representing signatures (column names must start with 'Sig').
 #' @param mode signature type for plotting, now supports 'copynumber', 'SBS', 'DBS' and 'ID'.
 #' @param method method for copy number feature classfication in [sig_tally],
-#' can be one of "Macintyre" ("M") and "Wang" ("W").
+#' can be one of "Macintyre" ("M"), "Wang" ("W").
 #' @param normalize one of 'row', 'column', 'raw' and "feature", for row normalization (signature),
 #' column normalization (component), raw data, row normalization by feature, respectively.
 #' Of note, 'feature' only works when the mode is 'copynumber'.
@@ -52,12 +52,14 @@
 #' Default is `NULL`, prefix 'Sig_' plus number is used.
 #' @param sig_orders set order of signatures, can be a character vector.
 #' Default is `NULL`, the signatures are ordered by alphabetical order.
+#' If an integer vector set, only specified signatures are plotted.
 #' @param check_sig_names if `TRUE`, check signature names when input is
 #' a matrix, i.e., all signatures (colnames) must start with 'Sig'.
 #' @author Shixiang Wang
 #' @inheritParams sig_tally
 #' @return a `ggplot` object
 #' @export
+#' @seealso [show_sig_profile_loop], [show_sig_profile_heatmap]
 #' @examples
 #' # Load SBS signature
 #' load(system.file("extdata", "toy_mutational_signature.RData",
@@ -112,13 +114,14 @@
 #' expect_s3_class(p2, "ggplot")
 #' expect_s3_class(p3, "ggplot")
 #' expect_s3_class(p4, "ggplot")
+# Signature <- s_mat
 show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID"),
                              method = "Wang",
                              normalize = c("row", "column", "raw", "feature"),
                              filters = NULL,
                              feature_setting = sigminer::CN.features,
                              style = c("default", "cosmic"),
-                             palette = use_color_style(style, mode),
+                             palette = use_color_style(style, mode, method),
                              set_gradient_color = FALSE,
                              free_space = "free_x",
                              rm_panel_border = style == "cosmic",
@@ -126,8 +129,8 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
                              bar_border_color = ifelse(style == "default", "grey50", "white"),
                              bar_width = 0.7,
                              paint_axis_text = TRUE,
-                             x_label_angle = ifelse(mode == "copynumber", 60, 90),
-                             x_label_vjust = 1,
+                             x_label_angle = ifelse(mode == "copynumber" & !startsWith(method, "T"), 60, 90),
+                             x_label_vjust = ifelse(mode == "copynumber" & !startsWith(method, "T"), 1, 0.5),
                              x_label_hjust = 1,
                              x_lab = "Components",
                              y_lab = "auto",
@@ -137,7 +140,7 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
                              digits = 2, base_size = 12, font_scale = 1,
                              sig_names = NULL, sig_orders = NULL,
                              check_sig_names = TRUE) {
-  stopifnot(all(!is.na(sig_names)), is.character(x_lab), is.character(y_lab))
+  stopifnot(all(!is.na(sig_names)))
 
   if (inherits(Signature, "Signature")) {
     Sig <- Signature$Signature
@@ -152,8 +155,12 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
     stop("Invalid input for 'Signature'", call. = FALSE)
   }
 
+  if (nrow(Sig) > 1000L) {
+    stop("This plot method doesn't support >1000 components, please try heatmap method!", call. = FALSE)
+  }
+
   mode <- match.arg(mode)
-  method <- match.arg(method, choices = c("Macintyre", "M", "Wang", "W"))
+  method <- match.arg(method, choices = c("Macintyre", "M", "Wang", "W", "Tao & Wang", "T"))
   normalize <- match.arg(normalize)
   style <- match.arg(style)
 
@@ -180,6 +187,10 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
     has_labels <- FALSE
   }
 
+  if (is.numeric(sig_orders)) {
+    Sig <- Sig[, sig_orders, drop = FALSE]
+  }
+
   # >>>>>>>>>>>>>>>>> identify mode and do data transformation
   mat <- as.data.frame(Sig)
   mat$context <- rownames(mat)
@@ -193,7 +204,7 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
     if (startsWith(method, "M")) {
       mat$base <- sub("\\d+$", "", mat$context)
       if (!"copynumber" %in% mat$base) {
-        send_stop("You may choose wrong 'method' option, please try method = 'W'.")
+        send_stop("You may choose wrong 'method' option, please try method = 'W' or 'T'.")
       }
       mat <- tidyr::gather(mat, class, signature, -c("context", "base"))
 
@@ -217,12 +228,12 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
         context = factor(.data$context,
           levels = unique(mat[["context"]])
         ),
-        class = factor(class)
+        class = factor(class, levels = colnames(Sig))
       )
-    } else {
+    } else if (startsWith(method, "W")) {
       mat$base <- sub("\\[.*\\]$", "", mat$context)
       if (!"CN" %in% mat$base) {
-        send_stop("You may choose wrong 'method' option, please try method = 'M'.")
+        send_stop("You may choose wrong 'method' option, please try method = 'M' or 'T'.")
       }
       mat <- tidyr::gather(mat, class, signature, -c("context", "base"))
 
@@ -240,7 +251,29 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
           levels = comp_orders
         ),
         base = factor(.data$base, levels = f_orders),
-        class = factor(class)
+        class = factor(class, levels = colnames(Sig))
+      )
+    } else {
+      ## Ziyu Tao & Tao Wu & Wang
+      if (any(nchar(mat$context) > 12)) {
+        send_stop("Wrong 'method' option or unsupported components.")
+      }
+      # mat$base <- sub("^([A-Z]:[A-Z]{2}):[0-9]\\+?:([A-Z]{2})$", "\\1:\\2", mat$context)
+      # mat$context <- sub("^[A-Z]:[A-Z]{2}:([0-9]\\+?):[A-Z]{2}$", "\\1", mat$context)
+      mat$base <- sub("^([A-Z]:[A-Z]{2}):[0-9]\\+?:[A-Z0-9]{2}$", "\\1", mat$context)
+      mat$context <- sub("^[A-Z]:[A-Z]{2}:([0-9]\\+?:[A-Z0-9]{2}$)", "\\1", mat$context)
+      # mat$context <- sub("^[A-Z]:[A-Z]{2}:", "", mat$context)
+      mat <- tidyr::gather(mat, class, signature, -c("context", "base"))
+
+      mat <- dplyr::mutate(mat,
+        context = factor(.data$context),
+        base = factor(.data$base, levels = c(
+          "S:HH", "S:HL", "S:LH", "S:LL",
+          "M:HH", "M:HL", "M:LH", "M:LL",
+          "L:HH", "L:HL", "L:LH", "L:LL",
+          "E:HH", "E:HL", "E:LH", "E:LL"
+        )),
+        class = factor(class, levels = colnames(Sig))
       )
     }
   } else if (mode == "SBS") {
@@ -263,11 +296,11 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
         "C>T", "T>A",
         "T>C", "T>G"
       )),
-      class = factor(class)
+      class = factor(class, levels = colnames(Sig))
     )
   } else if (mode == "DBS") {
     mat$base <- paste0(substr(mat$context, 1, 3), "NN")
-    if (!any(grepl("CC>NN", mat$base))) {
+    if (!any(grepl(">NN", mat$base))) {
       send_stop("You may choose wrong 'mode' option, this is designed for 'DBS'.")
     }
     mat$context <- substr(mat$context, 4, 5)
@@ -287,7 +320,7 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
         "TA>NN", "TC>NN",
         "TG>NN", "TT>NN"
       )),
-      class = factor(class)
+      class = factor(class, levels = colnames(Sig))
     )
   } else if (mode == "ID") {
     is_ID28 <- any(grepl("long_Del", rownames(mat)))
@@ -340,7 +373,7 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
           "4:I:R", "5:I:R",
           "2", "3", "4", "5:D:M"
         )),
-        class = factor(class)
+        class = factor(class, levels = colnames(Sig))
       )
     } else {
       mat <- dplyr::mutate(mat,
@@ -350,7 +383,7 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
           "1:I:C", "1:I:T",
           "Others"
         )),
-        class = factor(class)
+        class = factor(class, levels = colnames(Sig))
       )
     }
   }
@@ -376,13 +409,13 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
   # >>>>>>> Set signature name and order
   if (!is.null(sig_names)) {
     if (length(sig_names) != length(unique(mat[["class"]]))) {
-      stop("The length of input signature names is not equal to signature number")
+      stop("The length of input signature names is not equal to signature number!")
     }
     names(sig_names) <- paste0("Sig_", seq_along(sig_names))
     mat[["class"]] <- sig_names[mat[["class"]]]
   }
 
-  if (!is.null(sig_orders)) {
+  if (!is.null(sig_orders) & !is.numeric(sig_orders)) {
     mat[["class"]] <- factor(mat[["class"]], levels = sig_orders)
   } else {
     mat[["class"]] <- factor(mat[["class"]])
@@ -429,8 +462,9 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
   if (mode == "copynumber" & startsWith(method, "M")) {
     if (!is.null(params)) {
       params <- dplyr::mutate(params,
-                              feature = mp[.data$feature],
-                              components = paste0(.data$feature, "[", sub(".*[^0-9]+(\\d+$)", "\\1", .data$components), "]"))
+        feature = mp[.data$feature],
+        components = paste0(.data$feature, "[", sub(".*[^0-9]+(\\d+$)", "\\1", .data$components), "]")
+      )
       params$class <- factor(levels(mat[["class"]])[1], levels = levels(mat[["class"]]))
       p <- p + geom_text(aes(
         x = .data$components, y = Inf,
