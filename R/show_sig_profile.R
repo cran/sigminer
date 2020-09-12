@@ -125,7 +125,7 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
                              set_gradient_color = FALSE,
                              free_space = "free_x",
                              rm_panel_border = style == "cosmic",
-                             rm_grid_line = FALSE,
+                             rm_grid_line = style == "cosmic",
                              bar_border_color = ifelse(style == "default", "grey50", "white"),
                              bar_width = 0.7,
                              paint_axis_text = TRUE,
@@ -265,14 +265,29 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
       # mat$context <- sub("^[A-Z]:[A-Z]{2}:", "", mat$context)
       mat <- tidyr::gather(mat, class, signature, -c("context", "base"))
 
+
+      len_base <- length(unique(mat$base))
+      if (len_base == 12) {
+        palette <- palette[c(2:4, 6:8, 10:12, 14:16)]
+      }
+
       mat <- dplyr::mutate(mat,
         context = factor(.data$context),
-        base = factor(.data$base, levels = c(
-          "S:HH", "S:HL", "S:LH", "S:LL",
-          "M:HH", "M:HL", "M:LH", "M:LL",
-          "L:HH", "L:HL", "L:LH", "L:LL",
-          "E:HH", "E:HL", "E:LH", "E:LL"
-        )),
+        base = factor(.data$base, levels = if (len_base == 12) {
+          c(
+            "S:HH", "S:LD", "S:LL",
+            "M:HH", "M:LD", "M:LL",
+            "L:HH", "L:LD", "L:LL",
+            "E:HH", "E:LD", "E:LL"
+          )
+        } else {
+          c(
+            "S:HH", "S:HL", "S:LH", "S:LL",
+            "M:HH", "M:HL", "M:LH", "M:LL",
+            "L:HH", "L:HL", "L:LH", "L:LL",
+            "E:HH", "E:HL", "E:LH", "E:LL"
+          )
+        }),
         class = factor(class, levels = colnames(Sig))
       )
     }
@@ -526,6 +541,7 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
 
   if (style == "cosmic") {
     .theme_ss <- .theme_ss + theme(
+      axis.line = element_line(size = 0.3, colour = "black"),
       panel.spacing.x = unit(0, "line"),
       strip.background.x = element_rect(color = "white"),
       strip.background.y = element_blank(),
@@ -555,6 +571,21 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
       panel.grid.minor = element_blank()
     )
   }
+
+  # Cannot assign the second axis to right panel border.
+  # if (style == "cosmic") {
+  #   p <- p + scale_y_continuous(sec.axis = sec_axis(~.))
+  # }
+  if (style == "cosmic") {
+    p <- p + annotate(
+      geom = "segment",
+      y = -Inf,
+      yend = -Inf,
+      x = -Inf,
+      xend = Inf
+    )
+  }
+
   # <<<<<<<<<<<<<<<<< Setting theme
 
   p <- p +

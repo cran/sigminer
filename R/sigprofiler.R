@@ -10,15 +10,23 @@
 #' @param output output directory.
 #' @param range signature number range, i.e. `2:5`.
 #' @param nrun the number of iteration to be performed to extract each signature number.
+#' @param refit if `TRUE`, then refit the denovo signatures with nnls. Same
+#' meaning as `optimize` option in [sig_extract] or [sig_auto_extract].
+#' @param refit_plot if `TRUE`, SigProfiler will make
+#' denovo to COSMIC sigantures decompostion plots. However, this may fail due
+#' to some matrix cannot be identified by SigProfiler plot program.
 #' @param is_exome if `TRUE`, the exomes will be extracted.
 #' @param init_method the initialization algorithm for W and H matrix of NMF.
-#' Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'alexandrov-lab-custom'.
+#' Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar', 'alexandrov-lab-custom'
+#' and 'nndsvd_min'.
 #' @param cores number of cores used for computation.
 #' @param genome_build I think this option is useless when input is `matrix`, keep it
 #' in case it is useful.
 #' @param use_conda if `TRUE`, create an independent conda environment to run SigProfiler.
 #' @param py_path path to Python executable file, e.g. '/Users/wsx/anaconda3/bin/python'.
-#' @param sigprofiler_version version of `SigProfilerExtractor`.
+#' @param sigprofiler_version version of `SigProfilerExtractor`. If this
+#' package is not installed, the specified package will be installed.
+#' If this package is installed, this option is useless.
 #'
 #' @return For `sigprofiler_extract()`, returns nothing. See `output` directory.
 #' @export
@@ -40,8 +48,14 @@
 #'   )
 #' }
 sigprofiler_extract <- function(nmf_matrix, output, range = 2:5, nrun = 10L,
-                                is_exome = TRUE,
-                                init_method = c("random", "alexandrov-lab-custom", "nndsvd", "nndsvda", "nndsvdar"),
+                                refit = FALSE,
+                                refit_plot = FALSE,
+                                is_exome = FALSE,
+                                init_method = c(
+                                  "nndsvd_min", "random",
+                                  "alexandrov-lab-custom",
+                                  "nndsvd", "nndsvda", "nndsvdar"
+                                ),
                                 cores = -1L,
                                 genome_build = c("hg19", "hg38", "mm10"),
                                 use_conda = FALSE,
@@ -120,8 +134,18 @@ sigprofiler_extract <- function(nmf_matrix, output, range = 2:5, nrun = 10L,
 
   # print(sys$path)
 
+  nmf_matrix <- t(nmf_matrix)
+
+  ii <- colSums(nmf_matrix) < 0.01
+  if (any(ii)) {
+    message(
+      "The follow samples dropped due to null catalogue:\n\t",
+      paste0(colnames(nmf_matrix)[ii], collapse = ", ")
+    )
+    nmf_matrix <- nmf_matrix[, !ii, drop = FALSE]
+  }
+
   in_df <- nmf_matrix %>%
-    t() %>%
     as.data.frame() %>%
     tibble::rownames_to_column("MutationType")
 
@@ -146,13 +170,15 @@ sigprofiler_extract <- function(nmf_matrix, output, range = 2:5, nrun = 10L,
         "matrix",
         output,
         tmp_file,
-        reference_genome = genome_build, opportunity_genome = genome_build,
+        reference_genome = genome_build,
+        opportunity_genome = genome_build,
         minimum_signatures = sig_ranges[1],
         maximum_signatures = sig_ranges[2],
         nmf_replicates = nrun,
         exome = is_exome,
         nmf_init = init_method,
-        refit_denovo_signatures = FALSE,
+        refit_denovo_signatures = refit,
+        make_decomposition_plots = refit_plot,
         cpu = cores
       )
       sys$stdout$flush()
@@ -177,7 +203,8 @@ sigprofiler_extract <- function(nmf_matrix, output, range = 2:5, nrun = 10L,
         quote_opt(nrun, opt = "nmf_replicates", rm_quote = TRUE),
         quote_opt(ifelse(is_exome, "True", "False"), opt = "exome", rm_quote = TRUE),
         quote_opt(init_method, opt = "nmf_init"),
-        quote_opt("False", opt = "refit_denovo_signatures", rm_quote = TRUE),
+        quote_opt(ifelse(refit, "True", "False"), opt = "refit_denovo_signatures", rm_quote = TRUE),
+        quote_opt(ifelse(refit_plot, "True", "False"), opt = "make_decomposition_plots", rm_quote = TRUE),
         quote_opt(cores, opt = "cpu", rm_quote = TRUE),
         sep = ","
       )
@@ -231,12 +258,16 @@ quote_opt <- function(value, opt = NULL, rm_quote = FALSE) {
 #' Import SigProfiler Results into R
 #'
 #' @inheritParams sigprofiler
-#' @param type one of 'suggest' (for suggested solution) or 'all' (for all solutions).
+#' @param order_by_expo if `TRUE`, order the import signatures by their exposures, e.g. the signature
+#' contributed the most exposure in all samples will be named as `Sig1`.
+#' @param type one of 'suggest' (for suggested solution), 'refit' (for refit solution) or 'all' (for all solutions).
 #'
 #' @return For `sigprofiler_import()`, a `list` containing `Signature` object.
 #' @export
 #' @rdname sigprofiler
-sigprofiler_import <- function(output, type = c("suggest", "all")) {
+sigprofiler_import <- function(output,
+                               order_by_expo = FALSE,
+                               type = c("suggest", "refit", "all")) {
   stopifnot(dir.exists(output))
   type <- match.arg(type)
 
@@ -255,12 +286,21 @@ sigprofiler_import <- function(output, type = c("suggest", "all")) {
 
   message("NOTE: signature(A,B,C)... will be renamed to Sig(1,2,3)...")
 
-  if (type == "suggest") {
+  if (type %in% c("suggest", "refit")) {
     solution_path <- file.path(result_dir, "Suggested_Solution")
-    solution_path <- list.files(solution_path, pattern = "Novo", full.names = TRUE)
-    message("Reading suggested solution...")
+    if (type == "suggest") {
+      solution_path <- list.files(solution_path, pattern = "Novo", full.names = TRUE)
+      message("Reading suggested solution...")
+    } else {
+      solution_path <- list.files(solution_path, pattern = "Decomposed", full.names = TRUE)
+      message("Reading suggested solution...")
+    }
 
-    solution <- read_sigprofiler_solution(solution_path)
+    if (length(solution_path) != 1) {
+      stop("No solution path or more than 1 solution path found, please check!")
+    }
+
+    solution <- read_sigprofiler_solution(solution_path, order_by_expo = order_by_expo)
 
     message("Done.")
     return(list(
@@ -271,7 +311,7 @@ sigprofiler_import <- function(output, type = c("suggest", "all")) {
     solution_path <- file.path(result_dir, "All_Solutions")
     message("Reading all solutions...")
     solutions_path <- list.dirs(solution_path, full.names = TRUE, recursive = FALSE)
-    solutions <- purrr::map(solutions_path, read_sigprofiler_solution)
+    solutions <- purrr::map(solutions_path, read_sigprofiler_solution, order_by_expo = order_by_expo)
     names(solutions) <- paste0("S", sub("[^_]+_(.+)_[^_]+", "\\1", basename(solutions_path)))
 
     message("Done.")
@@ -282,7 +322,7 @@ sigprofiler_import <- function(output, type = c("suggest", "all")) {
   }
 }
 
-read_sigprofiler_solution <- function(x) {
+read_sigprofiler_solution <- function(x, order_by_expo = FALSE) {
   expo_path <- list.files(x, pattern = "Activities.*.txt", recursive = TRUE, full.names = TRUE, ignore.case = TRUE)
   if (length(expo_path) > 1) {
     expo_path <- expo_path[!grepl("error", expo_path, ignore.case = TRUE)]
@@ -290,17 +330,28 @@ read_sigprofiler_solution <- function(x) {
   sigs_path <- list.files(x, pattern = "Signatures.txt", recursive = TRUE, full.names = TRUE, ignore.case = TRUE)
   stat_samp_path <- list.files(x, pattern = "Samples_Stats.*.txt", recursive = TRUE, full.names = TRUE, ignore.case = TRUE)
   stat_sigs_path <- list.files(x, pattern = "Signatures_Stats.txt", recursive = TRUE, full.names = TRUE, ignore.case = TRUE)
+  if (length(stat_sigs_path) < 1) {
+    message("No Signatures_Stats.txt found, try finding *map_to_COSMIC* file.")
+    stat_sigs_path <- list.files(x, pattern = "map_to_COSMIC", recursive = TRUE, full.names = TRUE, ignore.case = TRUE)
+    refit <- TRUE
+  } else {
+    refit <- FALSE
+  }
 
-  expo <- data.table::fread(expo_path)
-  sigs <- data.table::fread(sigs_path)
-  stat_samp <- data.table::fread(stat_samp_path)
-  stat_sigs <- data.table::fread(stat_sigs_path)
+  expo <- data.table::fread(expo_path, header = TRUE)
+  sigs <- data.table::fread(sigs_path, header = TRUE)
+  stat_samp <- data.table::fread(stat_samp_path, header = TRUE)
+  stat_sigs <- data.table::fread(stat_sigs_path, header = TRUE)
 
   K <- ncol(expo) - 1L
 
   colnames(expo) <- c("sample", paste0("Sig", seq_len(K)))
   colnames(sigs) <- c("component", paste0("Sig", seq_len(K)))
-  colnames(stat_sigs)[1] <- "Signatures"
+  if (refit) {
+    colnames(stat_sigs)[2] <- "Signatures"
+  } else {
+    colnames(stat_sigs)[1] <- "Signatures"
+  }
   stat_sigs$Signatures <- colnames(expo)[-1]
   colnames(stat_samp)[1] <- "Samples"
 
@@ -327,6 +378,19 @@ read_sigprofiler_solution <- function(x) {
   Signature <- Signature.norm
   for (j in seq_len(K)) {
     Signature[, j] <- Signature[, j] * rowSums(Exposure)[j]
+  }
+
+  if (order_by_expo) {
+    sig_orders <- sort(rowSums(Exposure), decreasing = TRUE) %>% names()
+    if (!identical(rownames(Exposure), sig_orders)) {
+      Exposure <- Exposure[sig_orders, , drop = FALSE]
+      Exposure.norm <- Exposure.norm[sig_orders, , drop = FALSE]
+      Signature <- Signature[, sig_orders, drop = FALSE]
+      Signature.norm <- Signature.norm[, sig_orders, drop = FALSE]
+      rownames(Exposure) <- rownames(Exposure.norm) <-
+        colnames(Signature) <- colnames(Signature.norm) <- paste0("Sig", seq_along(sig_orders))
+      stat_sigs$Signatures <- sig_orders
+    }
   }
 
   res <- list(

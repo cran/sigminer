@@ -22,8 +22,11 @@
 #' column representing signatures.
 #' @param method method to solve the minimazation problem.
 #' 'NNLS' for nonnegative least square; 'QP' for quadratic programming; 'SA' for simulated annealing.
+#' @param auto_reduce if `TRUE`, try reducing the input reference signatures to increase
+#' the cosine similarity of reconstructed profile to observed profile.
 #' @param return_class string, 'matrix' or 'data.table'.
-#' @param return_error if `TRUE`, also return method error (Frobenius norm). NOTE:
+#' @param return_error if `TRUE`, also return sample error (Frobenius norm) and cosine
+#' similarity between observed sample profile (asa. spectrum) and reconstructed profile. NOTE:
 #' it is better to obtain the error when the type is 'absolute', because the error is
 #' affected by relative exposure accuracy.
 #' @param rel_threshold numeric vector, a relative exposure lower than this value will be set to 0.
@@ -96,6 +99,7 @@ sig_fit <- function(catalogue_matrix,
                     db_type = c("", "human-exome", "human-genome"),
                     show_index = TRUE,
                     method = c("QP", "NNLS", "SA"),
+                    auto_reduce = FALSE,
                     type = c("absolute", "relative"),
                     return_class = c("matrix", "data.table"),
                     return_error = FALSE,
@@ -112,6 +116,7 @@ sig_fit <- function(catalogue_matrix,
   on.exit(send_elapsed_time(timer))
 
   if (is.null(sig_index)) {
+    send_info("Signature index not detected.")
     if (inherits(sig, "Signature")) {
       send_success("Signature object detected.")
       sig_matrix <- sig$Signature
@@ -165,6 +170,13 @@ sig_fit <- function(catalogue_matrix,
 
     if ("ALL" %in% sig_index) {
       sig_index <- avail_index
+    }
+
+    if (length(sig_index) == 1) {
+      if (grepl(",", sig_index)) {
+        send_success("Signature indices separated by comma are detected.")
+        sig_index <- split_seq(sig_index)
+      }
     }
 
     if (!all(sig_index %in% avail_index)) {
@@ -229,8 +241,8 @@ sig_fit <- function(catalogue_matrix,
   send_success("Method '", method, "' detected.")
   f_fit <- switch(method,
     NNLS = {
-      if (!requireNamespace("pracma", quietly = TRUE)) {
-        send_stop("Please install 'pracma' package firstly.")
+      if (!requireNamespace("nnls", quietly = TRUE)) {
+        send_stop("Please install 'nnls' package firstly.")
       }
       decompose_NNLS
     },
@@ -250,11 +262,25 @@ sig_fit <- function(catalogue_matrix,
   send_success("Corresponding function generated.")
 
   send_info("Calling function.")
-  expo <- purrr::map2(as.data.frame(catalogue_matrix), rel_threshold,
-    f_fit,
-    sig_matrix,
-    type = type,
-    ...
+  # expo <- purrr::map2(as.data.frame(catalogue_matrix), rel_threshold,
+  #   f_fit,
+  #   sig_matrix,
+  #   type = type,
+  #   auto_reduce = auto_reduce,
+  #   ...
+  # )
+  expo <- purrr::pmap(list(as.data.frame(catalogue_matrix),
+                           rel_threshold,
+                           if (is.null(colnames(catalogue_matrix))) {
+                             NA_character_
+                           } else {
+                             colnames(catalogue_matrix)
+                           } ),
+                      f_fit,
+                      sig_matrix,
+                      type = type,
+                      auto_reduce = auto_reduce,
+                      ...
   )
   send_success("Done.")
 
@@ -319,13 +345,19 @@ sig_fit <- function(catalogue_matrix,
         errors <- sapply(seq(ncol(expo_mat)), function(i) FrobeniusNorm(true_catalog, sig_matrix, expo_mat[, i]))
       }
     }
-    names(errors) <- colnames(catalogue_matrix)
+
+    sim <- diag(cosine(sig_matrix %*% expo_mat, catalogue_matrix))
+    names(sim) <- names(errors) <- colnames(catalogue_matrix)
+
+    # Set precision
     errors <- round(errors, digits = 3)
+    sim <- round(sim, digits = 6)
 
     send_success("Done.")
     return(list(
       expo = expo,
-      errors = errors
+      errors = errors,
+      cosine = sim
     ))
   }
 
@@ -338,39 +370,64 @@ sig_fit <- function(catalogue_matrix,
 ## sig_matrix: reference signature matrix, components X signatures
 ## type: type of signature contribution to return
 
-# decompose_LS <- function(x, y, sig_matrix, type = "absolute", ...) {
-#   # Set constraints x >= 0
-#   G <- diag(dim(sig_matrix)[2])
-#   H <- rep(0, dim(sig_matrix)[2])
-#
-#   lsei <- tryCatch(eval(parse(text = "lsei::lsei")),
-#                   error = function(e) {
-#                     send_stop("Package 'lsei' not found. Please install it from <https://github.com/ShixiangWang/lsei> firstly.")
-#                   })
-#
-#   expo <- lsei(
-#     a = sig_matrix,
-#     b = x,
-#     e = G,
-#     f = H
-#   )
-#
-#   expo <- expo / sum(expo)
-#   return_expo(expo = expo, y, type, total = sum(x))
-# }
+decompose_NNLS <- function(x, y, z, sig_matrix, type = "absolute", auto_reduce = FALSE, ...) {
+  if (is.na(z)) send_info("Fitting sample: ", z)
 
-decompose_NNLS <- function(x, y, sig_matrix, type = "absolute", ...) {
-  ## lsqnonneg solve nonnegative least-squares constraints problem.
-  expo <- pracma::lsqnonneg(sig_matrix, x)$x
+  if (sum(x) != 0) {
+    ## nnls/lsqnonneg solve nonnegative least-squares constraints problem.
+    ## expo <- pracma::lsqnonneg(sig_matrix, x)$x
+    expo <- stats::coef(nnls::nnls(sig_matrix, x))
+    expo <- expo / sum(expo)
 
-  expo <- expo / sum(expo)
+    if (auto_reduce) {
+      rec <- (expo %*% t(sig_matrix) * sum(x))[1, ]
+      sim <- cosine(rec, x)
+      if (sim < 0.99) {
+        sim_old <- sim
+        # continue to optimize
+        send_info("Start optimizing...")
+        for (i in seq(0.001, 0.501, 0.01)) {
+          expo_low <- expo < i
+          send_info("Dropping reference signatures with relative exposure <", i)
+          sig_matrix_update <- sig_matrix[, !expo_low, drop = FALSE]
+          abs_expo <- decompose_NNLS(x, 0, z, sig_matrix_update, type = "absolute")
+          rec_update <- (abs_expo %*% t(sig_matrix_update))[1, ]
+          sim_update <- cosine(rec_update, x)
+          if (sim_update < sim) {
+            break()
+          }
+          sim <- sim_update
+        }
+        send_success("Stop optimizing at exposure level: ",
+                     i, ", ",
+                     sum(expo_low),
+                     " signatures dropped.")
+        send_info("Cosine similarity with ", round(abs(sim - sim_old), 6), " improved.")
+
+        out_expo <- vector("numeric", length = length(expo))
+        ## Correctly assign the exposure
+        out_expo[!expo_low] <- abs_expo / sum(abs_expo)
+        out_expo <- out_expo / sum(out_expo)
+
+        return(return_expo(out_expo, y, type, total = sum(x)))
+      } else {
+        send_success("The cosine similarity is very high, just return result.")
+      }
+    }
+
+  } else {
+    expo <- rep(0, ncol(sig_matrix))
+  }
+
   return_expo(expo = expo, y, type, total = sum(x))
 }
 
 # m observed turmor profile vector for a single patient/sample, 96 by 1. m is normalized.
 # P is same as sig_matrix
 
-decompose_QP <- function(x, y, P, type = "absolute", ...) {
+decompose_QP <- function(x, y, z, P, type = "absolute", auto_reduce = FALSE, ...) {
+  if (is.na(z)) send_info("Fitting sample: ", z)
+
   if (sum(x) != 0) {
     m <- x / sum(x)
     # N: how many signatures are selected
@@ -392,6 +449,44 @@ decompose_QP <- function(x, y, P, type = "absolute", ...) {
     expo <- out$solution
     expo[expo < 0] <- 0
     expo <- expo / sum(expo)
+
+    if (auto_reduce) {
+      sig_matrix <- P
+      rec <- (expo %*% t(sig_matrix) * sum(x))[1, ]
+      sim <- cosine(rec, x)
+      if (sim < 0.99) {
+        sim_old <- sim
+        # continue to optimize
+        send_info("Start optimizing...")
+        for (i in seq(0.001, 0.501, 0.01)) {
+          expo_low <- expo < i
+          send_info("Dropping reference signatures with relative exposure <", i)
+          sig_matrix_update <- sig_matrix[, !expo_low, drop = FALSE]
+          abs_expo <- decompose_QP(x, 0, z, sig_matrix_update, type = "absolute")
+          rec_update <- (abs_expo %*% t(sig_matrix_update))[1, ]
+          sim_update <- cosine(rec_update, x)
+          if (sim_update < sim) {
+            break()
+          }
+          sim <- sim_update
+        }
+        send_success("Stop optimizing at exposure level: ",
+                     i, ", ",
+                     sum(expo_low),
+                     " signatures dropped.")
+        send_info("Cosine similarity with ", round(abs(sim - sim_old), 6), " improved.")
+
+        out_expo <- vector("numeric", length = length(expo))
+        ## Correctly assign the exposure
+        out_expo[!expo_low] <- abs_expo / sum(abs_expo)
+        out_expo <- out_expo / sum(out_expo)
+
+        return(return_expo(out_expo, y, type, total = sum(x)))
+      } else {
+        send_success("The cosine similarity is very high, just return result.")
+      }
+    }
+
   } else {
     expo <- rep(0, ncol(P))
   }
@@ -401,7 +496,9 @@ decompose_QP <- function(x, y, P, type = "absolute", ...) {
 }
 
 
-decompose_SA <- function(x, y, P, type = "absolute", ...) {
+decompose_SA <- function(x, y, z, P, type = "absolute", auto_reduce = FALSE, ...) {
+  if (is.na(z)) send_info("Fitting sample: ", z)
+
   if (sum(x) != 0) {
     control <- list(...)
 
@@ -422,6 +519,44 @@ decompose_SA <- function(x, y, P, type = "absolute", ...) {
     sa <- GenSA::GenSA(lower = rep(0.0, N), upper = rep(1.0, N), fn = FrobeniusNorm.local, control = our.control)
     # Normalize the solution
     expo <- sa$par / sum(sa$par)
+
+    if (auto_reduce) {
+      sig_matrix <- P
+      rec <- (expo %*% t(sig_matrix) * sum(x))[1, ]
+      sim <- cosine(rec, x)
+      if (sim < 0.99) {
+        sim_old <- sim
+        # continue to optimize
+        send_info("Start optimizing...")
+        for (i in seq(0.001, 0.501, 0.01)) {
+          expo_low <- expo < i
+          send_info("Dropping reference signatures with relative exposure <", i)
+          sig_matrix_update <- sig_matrix[, !expo_low, drop = FALSE]
+          abs_expo <- decompose_SA(x, 0, z, sig_matrix_update, type = "absolute")
+          rec_update <- (abs_expo %*% t(sig_matrix_update))[1, ]
+          sim_update <- cosine(rec_update, x)
+          if (sim_update < sim) {
+            break()
+          }
+          sim <- sim_update
+        }
+        send_success("Stop optimizing at exposure level: ",
+                     i, ", ",
+                     sum(expo_low),
+                     " signatures dropped.")
+        send_info("Cosine similarity with ", round(abs(sim - sim_old), 6), " improved.")
+
+        out_expo <- vector("numeric", length = length(expo))
+        ## Correctly assign the exposure
+        out_expo[!expo_low] <- abs_expo / sum(abs_expo)
+        out_expo <- out_expo / sum(out_expo)
+
+        return(return_expo(out_expo, y, type, total = sum(x)))
+      } else {
+        send_success("The cosine similarity is very high, just return result.")
+      }
+    }
+
   } else {
     expo <- rep(0, ncol(P))
   }
@@ -439,6 +574,6 @@ return_expo <- function(expo, y, type = "absolute", total = NULL) {
   if (type == "relative") {
     expo <- expo / sum(expo)
   }
-  expo <- round(expo, digits = 3)
+  expo <- round(expo, digits = 6)
   expo
 }

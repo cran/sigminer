@@ -13,6 +13,7 @@ sig_fit_bootstrap(
   db_type = c("", "human-exome", "human-genome"),
   show_index = TRUE,
   method = c("QP", "NNLS", "SA"),
+  auto_reduce = FALSE,
   SA_not_bootstrap = FALSE,
   type = c("absolute", "relative"),
   rel_threshold = 0,
@@ -48,6 +49,9 @@ Currently only works for 'SBS'.}
 
 \item{method}{method to solve the minimazation problem.
 'NNLS' for nonnegative least square; 'QP' for quadratic programming; 'SA' for simulated annealing.}
+
+\item{auto_reduce}{if \code{TRUE}, try reducing the input reference signatures to increase
+the cosine similarity of reconstructed profile to observed profile.}
 
 \item{SA_not_bootstrap}{if \code{TRUE}, directly run 'SA' multiple times with original input instead of
 bootstrap samples.}
@@ -116,6 +120,6 @@ if (requireNamespace("quadprog", quietly = TRUE)) {
 Huang X, Wojtowicz D, Przytycka TM. Detecting presence of mutational signatures in cancer with confidence. Bioinformatics. 2018;34(2):330–337. doi:10.1093/bioinformatics/btx604
 }
 \seealso{
-\link{sig_fit}, \link{sig_fit_bootstrap_batch}
+\link{report_bootstrap_p_value}, \link{sig_fit}, \link{sig_fit_bootstrap_batch}
 }
 \keyword{bootstrap}

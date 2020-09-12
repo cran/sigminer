@@ -78,7 +78,7 @@ sig_auto_extract <- function(nmf_matrix = NULL,
                              result_prefix = "BayesNMF",
                              destdir = tempdir(),
                              method = c("L1W.L2H", "L1KL", "L2KL"),
-                             strategy = c("stable", "optimal"),
+                             strategy = c("optimal", "stable"),
                              K0 = 25,
                              nrun = 10,
                              niter = 2e5,
@@ -107,6 +107,15 @@ sig_auto_extract <- function(nmf_matrix = NULL,
 
   if (!recover) {
     nmf_matrix <- t(nmf_matrix) # rows for mutation types and columns for samples
+
+    ii <- colSums(nmf_matrix) < 0.01
+    if (any(ii)) {
+      message(
+        "The follow samples dropped due to null catalogue:\n\t",
+        paste0(colnames(nmf_matrix)[ii], collapse = ", ")
+      )
+      nmf_matrix <- nmf_matrix[, !ii, drop = FALSE]
+    }
 
     oplan <- future::plan()
     future::plan("multiprocess", workers = cores)
@@ -164,6 +173,7 @@ sig_auto_extract <- function(nmf_matrix = NULL,
   has_cn <- grepl("^CN[^C]", rownames(best_solution$Signature)) | startsWith(rownames(best_solution$Signature), "copynumber")
   mat <- nmf_matrix
   if (optimize) {
+    message("Refit the denovo signatures with QP.")
     ## Optimize signature exposure
     if (any(has_cn)) {
       mat_cn <- mat[has_cn, ]
@@ -171,12 +181,62 @@ sig_auto_extract <- function(nmf_matrix = NULL,
       W_cn <- apply(W_cn, 2, function(x) x / sum(x))
 
       ## Call LCD
-      best_solution$Exposure <- sig_fit(catalogue_matrix = mat_cn, sig = W_cn, mode = "copynumber")
-      best_solution$Exposure.norm <- apply(best_solution$Exposure, 2, function(x) x / sum(x, na.rm = TRUE))
+      best_solution$Exposure <- sig_fit(
+        catalogue_matrix = mat_cn,
+        sig = W_cn,
+        method = "QP",
+        mode = "copynumber"
+      )
     } else {
       ## Call LCD
-      best_solution$Exposure <- sig_fit(catalogue_matrix = mat, sig = apply(best_solution$Signature, 2, function(x) x / sum(x)))
-      best_solution$Exposure.norm <- apply(best_solution$Exposure, 2, function(x) x / sum(x, na.rm = TRUE))
+      best_solution$Exposure <- sig_fit(
+        catalogue_matrix = mat,
+        sig = apply(
+          best_solution$Signature,
+          2, function(x) x / sum(x)
+        ),
+        method = "QP"
+      )
+    }
+
+    Exposure <- best_solution$Exposure
+    # Handle hyper mutant samples
+    hyper_index <- grepl("_\\[hyper\\]_", colnames(Exposure))
+    if (sum(hyper_index) > 0) {
+      H.hyper <- Exposure[, hyper_index, drop = FALSE]
+      H.nonhyper <- Exposure[, !hyper_index, drop = FALSE]
+      sample.hyper <- sapply(
+        colnames(H.hyper),
+        function(x) strsplit(x, "_\\[hyper\\]_")[[1]][[1]]
+      )
+      unique.hyper <- unique(sample.hyper)
+      n.hyper <- length(unique.hyper)
+      x.hyper <- array(0, dim = c(nrow(H.hyper), n.hyper))
+      for (i in 1:n.hyper) {
+        x.hyper[, i] <- rowSums(H.hyper[, sample.hyper %in% unique.hyper[i], drop = FALSE])
+      }
+      colnames(x.hyper) <- unique.hyper
+      rownames(x.hyper) <- rownames(Exposure)
+      Exposure <- cbind(H.nonhyper, x.hyper)
+      best_solution$Exposure <- Exposure
+    }
+
+    best_solution$Exposure.norm <- apply(
+      best_solution$Exposure, 2,
+      function(x) x / sum(x, na.rm = TRUE)
+    )
+    # When only one signature
+    if (!is.matrix(best_solution$Exposure.norm)) {
+      best_solution$Exposure.norm <- matrix(best_solution$Exposure.norm,
+        nrow = 1,
+        dimnames = list(NULL, names(best_solution$Exposure.norm))
+      )
+    }
+    ## Scale the result
+    if (any(has_cn)) {
+      best_solution$Signature <- best_solution$Signature.norm * sum(nmf_matrix, na.rm = TRUE)
+    } else {
+      best_solution$Signature <- best_solution$Signature.norm * sum(best_solution$Exposure, na.rm = TRUE)
     }
   }
 

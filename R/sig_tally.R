@@ -333,6 +333,7 @@ sig_tally.CopyNumber <- function(object,
         parameters = para_df,
         nmf_matrix = cn_matrix,
         all_matrices = list(
+          simplified_matrix = cn_matrix_list$ss_mat,
           standard_matrix = cn_matrix_list$s_mat,
           complex_matrix = cn_matrix_list$c_mat
         )
@@ -421,7 +422,7 @@ sig_tally.MAF <- function(object, mode = c("SBS", "DBS", "ID", "ALL"),
 
   query <- maftools::subsetMaf(
     maf = object,
-    query = "Variant_Type %in% c('SNP', 'INS', 'DEL')", fields = "Chromosome",
+    query = "Variant_Type %in% c('SNP', 'DNP', 'INS', 'DEL')", fields = "Chromosome",
     includeSyn = use_syn, mafObj = FALSE
   )
   send_success("Variants from MAF object queried.")
@@ -469,8 +470,11 @@ sig_tally.MAF <- function(object, mode = c("SBS", "DBS", "ID", "ALL"),
   query$Chromosome <- sub("23", "X", query$Chromosome)
   # detect and transform chromosome 24 to "Y"
   query$Chromosome <- sub("24", "Y", query$Chromosome)
-
   send_success("Sex chromosomes properly handled.")
+
+  # only keep standard chromosomes
+  query <- query[query$Chromosome %in% paste0("chr", c(1:22, "X", "Y", "M", "MT"))]
+  send_success("Only variants located in standard chromosomes (1:22, X, Y, M/MT) are kept.")
 
   query$Start_Position <- as.numeric(as.character(query$Start_Position))
   query$End_Position <- as.numeric(as.character(query$End_Position))
@@ -521,19 +525,34 @@ sig_tally.MAF <- function(object, mode = c("SBS", "DBS", "ID", "ALL"),
     res_SBS <- tryCatch(
       generate_matrix_SBS(query, ref_genome, genome_build = genome_build, add_trans_bias = add_trans_bias),
       error = function(e) {
-        NULL
+        if (e$message == "") {
+          NULL
+        } else {
+          send_error("Unexpected error occurred:")
+          send_stop(e$message)
+        }
       }
     )
     res_DBS <- tryCatch(
       generate_matrix_DBS(query, ref_genome, genome_build = genome_build, add_trans_bias = add_trans_bias),
       error = function(e) {
-        NULL
+        if (e$message == "") {
+          NULL
+        } else {
+          send_error("Unexpected error occurred:")
+          send_stop(e$message)
+        }
       }
     )
     res_ID <- tryCatch(
       generate_matrix_INDEL(query, ref_genome, genome_build = genome_build, add_trans_bias = add_trans_bias),
       error = function(e) {
-        NULL
+        if (e$message == "") {
+          NULL
+        } else {
+          send_error("Unexpected error occurred:")
+          send_stop(e$message)
+        }
       }
     )
 

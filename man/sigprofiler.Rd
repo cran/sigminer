@@ -11,8 +11,11 @@ sigprofiler_extract(
   output,
   range = 2:5,
   nrun = 10L,
-  is_exome = TRUE,
-  init_method = c("random", "alexandrov-lab-custom", "nndsvd", "nndsvda", "nndsvdar"),
+  refit = FALSE,
+  refit_plot = FALSE,
+  is_exome = FALSE,
+  init_method = c("nndsvd_min", "random", "alexandrov-lab-custom", "nndsvd", "nndsvda",
+    "nndsvdar"),
   cores = -1L,
   genome_build = c("hg19", "hg38", "mm10"),
   use_conda = FALSE,
@@ -20,7 +23,11 @@ sigprofiler_extract(
   sigprofiler_version = "1.0.17"
 )
 
-sigprofiler_import(output, type = c("suggest", "all"))
+sigprofiler_import(
+  output,
+  order_by_expo = FALSE,
+  type = c("suggest", "refit", "all")
+)
 }
 \arguments{
 \item{nmf_matrix}{a \code{matrix} used for NMF decomposition with rows indicate samples and columns indicate components.}
@@ -31,10 +38,18 @@ sigprofiler_import(output, type = c("suggest", "all"))
 
 \item{nrun}{the number of iteration to be performed to extract each signature number.}
 
+\item{refit}{if \code{TRUE}, then refit the denovo signatures with nnls. Same
+meaning as \code{optimize} option in \link{sig_extract} or \link{sig_auto_extract}.}
+
+\item{refit_plot}{if \code{TRUE}, SigProfiler will make
+denovo to COSMIC sigantures decompostion plots. However, this may fail due
+to some matrix cannot be identified by SigProfiler plot program.}
+
 \item{is_exome}{if \code{TRUE}, the exomes will be extracted.}
 
 \item{init_method}{the initialization algorithm for W and H matrix of NMF.
-Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'alexandrov-lab-custom'.}
+Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar', 'alexandrov-lab-custom'
+and 'nndsvd_min'.}
 
 \item{cores}{number of cores used for computation.}
 
@@ -45,9 +60,14 @@ in case it is useful.}
 
 \item{py_path}{path to Python executable file, e.g. '/Users/wsx/anaconda3/bin/python'.}
 
-\item{sigprofiler_version}{version of \code{SigProfilerExtractor}.}
+\item{sigprofiler_version}{version of \code{SigProfilerExtractor}. If this
+package is not installed, the specified package will be installed.
+If this package is installed, this option is useless.}
 
-\item{type}{one of 'suggest' (for suggested solution) or 'all' (for all solutions).}
+\item{order_by_expo}{if \code{TRUE}, order the import signatures by their exposures, e.g. the signature
+contributed the most exposure in all samples will be named as \code{Sig1}.}
+
+\item{type}{one of 'suggest' (for suggested solution), 'refit' (for refit solution) or 'all' (for all solutions).}
 }
 \value{
 For \code{sigprofiler_extract()}, returns nothing. See \code{output} directory.

@@ -1,3 +1,34 @@
+# sigminer 1.0.16
+
+- Added `auto_reduce` option in `sig_fit*` functions to improve signature fitting.
+- Return cosine similarity for sample profile in `sig_fit()`.
+- Set default strategy in `sig_auto_extract()` to 'optimal'.
+- Supported search reference signature index in `get_sig_cancer_type_index()`.
+- Outputed legacy COSMIC similarity for SBS signatures.
+- Added new option in `sigprofiler_extract()` to reduce failure in when `refit` is enabled.
+- Outputed both relative and absolute signature exposure in `output_sig()`.
+- Updated background color in `show_group_distribution()`.
+- Modified the default theme for signature profile in COSMIC style.
+- Updated the copy number classification method.
+
+# sigminer 1.0.15
+
+- Handled null catalogue.
+- Supported ordering the signatures for results from SigProfiler.
+- Supported importing refit results from SigProfiler.
+- Set `optimize` option in `sig_extract()` and `sig_auto_extract()`.
+
+# sigminer 1.0.14
+
+- Supported signature index separated by `,` in `sig_fit()` and `sig_fit_bootstrap*` functions.
+- Added `output_*` functions from [sigflow](https://github.com/ShixiangWang/sigflow).
+- Enhanced DBS search and error handling in `sig_tally()`.
+- Added option `highlight_genes` in `show_cn_group_profile()` to show gene labels.
+- Added `get_sig_cancer_type_index()` to get reference signature index.
+- Added `show_group_distribution()` to show group distribution.
+- Added options in `show_cn_profile()` to show specified ranges and add copy number value labels.
+- Used package `nnls` instead of `pracma` for NNLS implementation in `sig_fit()`.
+
 # sigminer 1.0.13
 
 - Supported `BSgenome.Hsapiens.1000genomes.hs37d5` in `sig_tally()`.

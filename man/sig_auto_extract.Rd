@@ -9,7 +9,7 @@ sig_auto_extract(
   result_prefix = "BayesNMF",
   destdir = tempdir(),
   method = c("L1W.L2H", "L1KL", "L2KL"),
-  strategy = c("stable", "optimal"),
+  strategy = c("optimal", "stable"),
   K0 = 25,
   nrun = 10,
   niter = 2e+05,
@@ -47,7 +47,7 @@ If you want select other solution, please check \link{get_bayesian_result}.}
 
 \item{cores}{number of cpu cores to run NMF.}
 
-\item{optimize}{logical, for exposure optimization, especially useful for copy number signature.}
+\item{optimize}{if \code{TRUE}, then refit the denovo signatures with QP method, see \link{sig_fit}.}
 
 \item{skip}{if \code{TRUE}, it will skip running a previous stored result. This can be used to
 extend run times, e.g. you try running 10 times firstly and then you want to extend it to

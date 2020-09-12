@@ -1,5 +1,7 @@
 #' Exposure Instability Analysis of Signature Exposures with Bootstrapping
 #'
+#' Read [sig_fit_bootstrap] for more option setting.
+#'
 #' @inheritParams sig_fit
 #' @inheritParams sig_fit_bootstrap
 #' @param methods a subset of `c("NNLS", "QP", "SA")`.
@@ -12,8 +14,8 @@
 #' will be saved to local machine location defined by `result_dir`. This is very useful for running
 #' more than 10 times for more than 100 samples.
 #' @param result_dir see above, default is temp directory defined by R.
-#' @param ... other common parameters passing to [sig_fit_bootstrap], including `sig`, `sig_index`,
-#' `sig_db`, `db_type`, `mode`, etc.
+#' @param ... other common parameters passing to [sig_fit_bootstrap], including
+#'  `sig`, `sig_index`, `sig_db`, `db_type`, `mode`, `auto_reduce` etc.
 #'
 #' @return a `list` of `data.table`.
 #' @export
@@ -93,13 +95,17 @@ sig_fit_bootstrap_batch <- function(catalogue_matrix,
       sample = names(expo_list$errors),
       errors = as.numeric(expo_list$errors)
     )
+    expo_list$cosine <- data.table::data.table(
+      sample = names(expo_list$cosine),
+      cosine = as.numeric(expo_list$cosine)
+    )
     optimal_list[[m]] <- expo_list
   }
   optimal_list <- purrr::transpose(optimal_list)
   optimal_list <- purrr::map(optimal_list, data.table::rbindlist, fill = TRUE, idcol = "method")
 
   ## Get bootstrap exposures with different methods
-  send_info("Getting bootstrap exposures (&errors) for different methods.")
+  send_info("Getting bootstrap exposures (&errors/similarity) for different methods.")
   send_info("This step is time consuming, please be patient.")
   call_bt <- function(x, sample, y, methods, n = 1000, ...) {
     if (!is.null(job_id)) {
@@ -168,6 +174,10 @@ sig_fit_bootstrap_batch <- function(catalogue_matrix,
         type = names(out$errors),
         errors = as.numeric(out$errors)
       )
+      out$cosine <- data.table::data.table(
+        type = names(out$cosine),
+        cosine = as.numeric(out$cosine)
+      )
       out
     })
     x <- purrr::transpose(x)
@@ -199,13 +209,16 @@ sig_fit_bootstrap_batch <- function(catalogue_matrix,
   send_success("Outputing.")
   optimal_list$expo$type <- "optimal"
   optimal_list$errors$type <- "optimal"
+  optimal_list$cosine$type <- "optimal"
 
   expos <- rbind(optimal_list$expo, bt_list$expo, fill = TRUE)
   errors <- rbind(optimal_list$errors, bt_list$errors, fill = TRUE)
+  cosine <- rbind(optimal_list$cosine, bt_list$cosine, fill = TRUE)
 
   result <- list(
     expo = expos,
     error = errors,
+    cosine = cosine,
     p_val = p_val
   )
   return(result)

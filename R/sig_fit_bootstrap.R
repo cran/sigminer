@@ -20,7 +20,7 @@
 #' @return a `list`
 #' @export
 #' @keywords bootstrap
-#' @seealso [sig_fit], [sig_fit_bootstrap_batch]
+#' @seealso [report_bootstrap_p_value], [sig_fit], [sig_fit_bootstrap_batch]
 #' @examples
 #' W <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
 #' colnames(W) <- c("sig1", "sig2")
@@ -66,6 +66,7 @@ sig_fit_bootstrap <- function(catalog,
                               db_type = c("", "human-exome", "human-genome"),
                               show_index = TRUE,
                               method = c("QP", "NNLS", "SA"),
+                              auto_reduce = FALSE,
                               SA_not_bootstrap = FALSE,
                               type = c("absolute", "relative"),
                               rel_threshold = 0,
@@ -162,6 +163,7 @@ sig_fit_bootstrap <- function(catalog,
     db_type = db_type,
     show_index = show_index,
     method = method,
+    auto_reduce = auto_reduce,
     type = type,
     return_class = "matrix",
     return_error = TRUE,
@@ -196,25 +198,6 @@ sig_fit_bootstrap <- function(catalog,
     suppressMessages(
       base::do.call("sig_fit", args = Args)
     )
-
-    # suppressMessages(
-    #   sig_fit(
-    #     catalogue_matrix = catalog_mat,
-    #     sig = sig,
-    #     sig_index = sig_index,
-    #     sig_db = sig_db,
-    #     db_type = db_type,
-    #     show_index = show_index,
-    #     method = method,
-    #     type = type,
-    #     return_class = "matrix",
-    #     return_error = TRUE,
-    #     rel_threshold = rel_threshold,
-    #     mode = mode,
-    #     true_catalog = catalog,
-    #     unlist(c(list(...), threshold.stop = suboptimal_factor * suboptimal_ref_error))
-    #   )
-    # )
   })
 
   cli::cli_status_clear(sb)
@@ -227,12 +210,13 @@ sig_fit_bootstrap <- function(catalog,
   send_success("Signature exposures collected.")
 
   errors <- sapply(res[2, ], c)
-  names(errors) <- colnames(expo) <- paste0("Rep_", seq(n))
-  send_success("Errors collected.")
+  cosine <- sapply(res[3, ], c)
+  names(cosine) <- names(errors) <- colnames(expo) <- paste0("Rep_", seq(n))
+  send_success("Errors and similarity collected.")
 
   send_success("Done.")
 
-  return(list(expo = expo, errors = errors))
+  return(list(expo = expo, errors = errors, cosine = cosine))
 }
 
 
