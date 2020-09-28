@@ -29,16 +29,18 @@ sig_fit_bootstrap(
 N is the number of component, 1 is the sample.}
 
 \item{sig}{a \code{Signature} object obtained either from \link{sig_extract} or \link{sig_auto_extract},
-or just a raw signature matrix with row representing components (motifs) and
+or just a raw signature matrix/\code{data.frame} with row representing components (motifs) and
 column representing signatures.}
 
 \item{n}{the number of bootstrap replicates.}
 
 \item{sig_index}{a vector for signature index. "ALL" for all signatures.}
 
-\item{sig_db}{can be 'legacy' (for COSMIC v2 'SBS'),
+\item{sig_db}{default 'legacy', it can be 'legacy' (for COSMIC v2 'SBS'),
 'SBS', 'DBS', 'ID' and 'TSB' (for SBS transcriptional strand bias signatures).
-Default 'legacy'.}
+For more specific details, it can also be 'SBS_hg19', 'SBS_hg38',
+'SBS_mm9', 'SBS_mm10', 'DBS_hg19', 'DBS_hg38', 'DBS_mm9', 'DBS_mm10'.
+But the signature profile for different genome builds are basically same.}
 
 \item{db_type}{only used when \code{sig_db} is enabled.
 "" for keeping default, "human-exome" for transforming to exome frequency of component,
@@ -107,13 +109,6 @@ if (requireNamespace("quadprog", quietly = TRUE)) {
   ## Input a list
   report_bootstrap_p_value(list(samp1 = H_bootstrap, samp2 = H_bootstrap))
 
-  ## Find suboptimal decomposition
-  H_suboptimal <- sig_fit_bootstrap(V[, 1], W,
-    n = 10,
-    type = "absolute",
-    method = "SA",
-    find_suboptimal = TRUE
-  )
 }
 }
 \references{

@@ -1,7 +1,7 @@
 Package: sigminer
 Title: Extract, Analyze and Visualize Signatures for Genomic Variations
-Version: 1.0.16
-Date: 2020-08-14
+Version: 1.0.19
+Date: 2020-09-28
 Authors@R: 
     c(person(given = "Shixiang",
              family = "Wang",
@@ -43,10 +43,10 @@ Imports: cli (>= 2.0.0), cowplot, data.table, dplyr, foreach, furrr,
         methods, NMF, purrr, Rcpp, rlang (>= 0.1.2), stats, tidyr
 Suggests: Biobase, Biostrings, BSgenome, BSgenome.Hsapiens.UCSC.hg19,
         circlize, cluster, covr, doFuture, flexmix, GenomicRanges,
-        GenSA, ggalluvial, ggfittext, ggplotify, IRanges, knitr,
-        markdown, nnls, patchwork, pheatmap, quadprog, R.utils,
-        RColorBrewer, reticulate, rmarkdown, roxygen2, testthat,
-        tibble, ggrepel
+        GenSA, ggalluvial, ggcorrplot, ggfittext, ggplotify, ggrepel,
+        IRanges, knitr, markdown, nnls, patchwork, pheatmap, quadprog,
+        R.utils, RColorBrewer, reticulate, rmarkdown, roxygen2,
+        testthat, tibble
 LinkingTo: Rcpp
 VignetteBuilder: knitr
 biocViews:
@@ -54,7 +54,7 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: yes
-Packaged: 2020-09-12 14:13:05 UTC; wsx
+Packaged: 2020-09-28 07:05:02 UTC; wsx
 Author: Shixiang Wang [aut, cre] (<https://orcid.org/0000-0001-9855-7357>),
   Xue-Song Liu [aut, ctb] (<https://orcid.org/0000-0002-7736-0077>),
   Tao Wu [aut, ctb],
@@ -63,4 +63,4 @@ Author: Shixiang Wang [aut, cre] (<https://orcid.org/0000-0001-9855-7357>),
   Anand Mayakonda [ctb]
 Maintainer: Shixiang Wang <w_shixiang@163.com>
 Repository: CRAN
-Date/Publication: 2020-09-12 14:30:02 UTC
+Date/Publication: 2020-09-28 07:30:03 UTC

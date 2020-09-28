@@ -12,20 +12,24 @@ get_sig_similarity(
   method = "cosine",
   normalize = c("row", "feature"),
   feature_setting = sigminer::CN.features,
+  set_order = TRUE,
   pattern_to_rm = NULL,
   verbose = TRUE
 )
 }
 \arguments{
-\item{Signature}{a \code{Signature} object or a component-by-signature matrix (sum of each column is 1)
-or a normalized component-by-sample matirx (sum of each column is 1).
+\item{Signature}{a \code{Signature} object or a component-by-signature matrix/\code{data.frame}
+(sum of each column is 1) or a normalized component-by-sample matrix/\code{data.frame}
+(sum of each column is 1).
 More please see examples.}
 
 \item{Ref}{default is \code{NULL}, can be a same object as \code{Signature}.}
 
-\item{sig_db}{can be 'legacy' (for COSMIC v2 'SBS'),
+\item{sig_db}{default 'legacy', it can be 'legacy' (for COSMIC v2 'SBS'),
 'SBS', 'DBS', 'ID' and 'TSB' (for SBS transcriptional strand bias signatures).
-Default 'legacy'.}
+For more specific details, it can also be 'SBS_hg19', 'SBS_hg38',
+'SBS_mm9', 'SBS_mm10', 'DBS_hg19', 'DBS_hg38', 'DBS_mm9', 'DBS_mm10'.
+But the signature profile for different genome builds are basically same.}
 
 \item{db_type}{only used when \code{sig_db} is enabled.
 "" for keeping default, "human-exome" for transforming to exome frequency of component,
@@ -44,6 +48,8 @@ Default is \link{CN.features}. Users can also set custom input with "feature",
 "min" and "max" columns available. Valid features can be printed by
 \code{unique(CN.features$feature)}.}
 
+\item{set_order}{if \code{TRUE}, order the return similarity matrix.}
+
 \item{pattern_to_rm}{patterns for removing some features/components in similarity
 calculation. A vector of component name is also accepted.
 The remove operation will be done after normalization. Default is \code{NULL}.}
@@ -59,6 +65,8 @@ or known COSMIC signatures specified by \code{sig_db} argument.
 Two COSMIC databases are used for comparisons - "legacy" which includes 30 signaures,
 and "SBS" - which includes updated/refined 65 signatures. This function is modified
 from \code{compareSignatures()} in \strong{maftools} package.
+\strong{NOTE}: all reference signatures are generated from gold standard tool:
+SigProfiler.
 }
 \examples{
 # Load mutational signature
@@ -74,15 +82,23 @@ s2
 s3 <- get_sig_similarity(sig2, sig_db = "SBS")
 s3
 
+# Set order for result similarity matrix
+s4 <- get_sig_similarity(sig2, sig_db = "SBS", set_order = TRUE)
+s4
+
 ## Remove some components
 ## in similarity calculation
-s4 <- get_sig_similarity(sig2,
+s5 <- get_sig_similarity(sig2,
   Ref = sig2,
   pattern_to_rm = c("T[T>G]C", "T[T>G]G", "T[T>G]T")
 )
-s4
+s5
 
 ## Same to DBS and ID signatures
+x1 <- get_sig_db("DBS_hg19")
+x2 <- get_sig_db("DBS_hg38")
+s6 <- get_sig_similarity(x1$db, x2$db)
+s6
 }
 \author{
 Shixiang Wang \href{mailto:w_shixiang@163.com}{w_shixiang@163.com}

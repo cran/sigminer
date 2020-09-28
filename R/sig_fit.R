@@ -18,7 +18,7 @@
 #' @inheritParams get_sig_exposure
 #' @inheritParams get_sig_similarity
 #' @param sig a `Signature` object obtained either from [sig_extract] or [sig_auto_extract],
-#' or just a raw signature matrix with row representing components (motifs) and
+#' or just a raw signature matrix/`data.frame` with row representing components (motifs) and
 #' column representing signatures.
 #' @param method method to solve the minimazation problem.
 #' 'NNLS' for nonnegative least square; 'QP' for quadratic programming; 'SA' for simulated annealing.
@@ -74,21 +74,21 @@
 #'   show_groups(z)
 #' }
 #'
-#' if (requireNamespace("GenSA", quietly = TRUE)) {
-#'   H_infer <- sig_fit(V, W, method = "SA")
-#'   H_infer
-#'   H
-#'
-#'   H_dt <- sig_fit(V, W, method = "SA", return_class = "data.table")
-#'   H_dt
-#'
-#'   ## Modify arguments to method
-#'   sig_fit(V, W, method = "SA", maxit = 10, temperature = 100)
-#'
-#'   ## Show results
-#'   show_sig_fit(H_infer)
-#'   show_sig_fit(H_dt)
-#' }
+# if (requireNamespace("GenSA", quietly = TRUE)) {
+#   H_infer <- sig_fit(V, W, method = "SA")
+#   H_infer
+#   H
+#
+#   H_dt <- sig_fit(V, W, method = "SA", return_class = "data.table")
+#   H_dt
+#
+#   ## Modify arguments to method
+#   sig_fit(V, W, method = "SA", maxit = 10, temperature = 100)
+#
+#   ## Show results
+#   show_sig_fit(H_infer)
+#   show_sig_fit(H_dt)
+# }
 #' @testexamples
 #' expect_is(H_infer, "matrix")
 #' expect_is(H_dt, "data.table")
@@ -120,9 +120,9 @@ sig_fit <- function(catalogue_matrix,
     if (inherits(sig, "Signature")) {
       send_success("Signature object detected.")
       sig_matrix <- sig$Signature
-    } else if (is.matrix(sig)) {
-      send_success("Signature matrix detected.")
-      sig_matrix <- sig
+    } else if (is.matrix(sig) | is.data.frame(sig)) {
+      send_success("Signature matrix/data.frame detected.")
+      sig_matrix <- as.matrix(sig)
     } else {
       send_error("Invalid input for 'sig'.")
       send_stop("Exit.")
@@ -175,7 +175,7 @@ sig_fit <- function(catalogue_matrix,
     if (length(sig_index) == 1) {
       if (grepl(",", sig_index)) {
         send_success("Signature indices separated by comma are detected.")
-        sig_index <- split_seq(sig_index)
+        sig_index <- unique(split_seq(sig_index))
       }
     }
 

@@ -9,11 +9,14 @@
 #' @param order_by_fun if `TRUE`, reorder the groups by summary measure computed
 #' by argument `fun`.
 #' @param alpha alpha for points, range from 0 to 1.
-#' @param g_label a named vector to set facet labels, default is `NULL`.
+#' @param g_label a string 'label' (default) for labeling with sample size,
+#' or 'norm' to show just group name, or a named vector to set facet labels.
 #' @param g_angle angle for facet labels, default is `0`.
 #' @param g_position position for facet labels, default is 'top', can also
 #' be 'bottom'.
 #' @param point_size size of point.
+#' @param segment_size size of segment.
+#' @param segment_color color of segment.
 #' @param xlab title for x axis.
 #' @param ylab title for y axis.
 #' @param nrow number of row.
@@ -31,6 +34,7 @@
 #' )
 #' p <- show_group_distribution(data,
 #'   gvar = 2, dvar = 1,
+#'   g_label = "norm",
 #'   background_color = "grey"
 #' )
 #' p
@@ -41,17 +45,27 @@
 #'   alpha = 0.3
 #' )
 #' p2
+#'
+#' # Set custom group names
+#' p3 <- show_group_distribution(data,
+#'                         gvar = 2, dvar = 1,
+#'                         g_label = c("A"="X", "B"="Y", "C"="Z")
+#' )
+#' p3
 #' @testexamples
 #' expect_is(p, "ggplot")
-#' expect_is(p, "ggplot")
+#' expect_is(p2, "ggplot")
+#' expect_is(p3, "ggplot")
 show_group_distribution <- function(data, gvar, dvar,
                                     fun = stats::median,
                                     order_by_fun = FALSE,
                                     alpha = 0.8,
-                                    g_label = NULL,
+                                    g_label = "label",
                                     g_angle = 0,
                                     g_position = "top",
                                     point_size = 1L,
+                                    segment_size = 1L,
+                                    segment_color = "red",
                                     xlab = NULL,
                                     ylab = NULL,
                                     nrow = 1L,
@@ -129,8 +143,13 @@ show_group_distribution <- function(data, gvar, dvar,
   dp$b_colors <- b_colors[1:nrow(dp)]
   dp$b_colors <- factor(dp$b_colors, levels = background_color)
 
-  g_label <- ds$label
-  names(g_label) <- ds$.gvar
+  if (identical(g_label, "label")) {
+    g_label <- ds$label
+    names(g_label) <- ds$.gvar
+  } else if (identical(g_label, "norm")) {
+    g_label <- ds$.gvar
+    names(g_label) <- ds$.gvar
+  }
 
   p <- ggplot(d) +
     geom_rect(aes_string(
@@ -145,8 +164,8 @@ show_group_distribution <- function(data, gvar, dvar,
     ) +
     geom_segment(aes_string(x = "x", xend = "xend", y = "y", yend = "yend"),
       data = ds,
-      color = "red",
-      size = 2
+      color = segment_color,
+      size = segment_size
     ) +
     scale_x_continuous(expand = expansion(mult = c(0, 0))) +
     scale_y_continuous(expand = expansion(mult = c(0, 0))) +

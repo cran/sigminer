@@ -92,11 +92,51 @@ output_sig <- function(sig, result_dir, mut_type = "SBS") {
       file = file.path(result_dir, paste0(mut_type, "_", attr(sig, "call_method"), "_signature.csv"))
     )
   }
-  data.table::fwrite(get_sig_exposure(sig, type = "relative"),
+
+  expo_rel <- get_sig_exposure(sig, type = "relative")
+  data.table::fwrite(expo_rel,
     file = file.path(result_dir, paste0(mut_type, "_", attr(sig, "call_method"), "_relative_exposure.csv"))
   )
-  data.table::fwrite(get_sig_exposure(sig),
+
+  expo_rel_long <- expo_rel %>%
+    tidyr::pivot_longer(
+      cols = colnames(expo_rel)[-1],
+      names_to = "sig",
+      values_to = "expo"
+    )
+
+  p <- show_group_distribution(expo_rel_long, gvar = "sig", dvar = "expo")
+  ggsave(file.path(
+    result_dir,
+    paste0(
+      mut_type, "_",
+      attr(sig, "call_method"), "_exposure_distribution_relative.pdf"
+    )
+  ),
+  plot = p, height = 4, width = 1 * sig$K
+  )
+
+  expo_abs <- get_sig_exposure(sig)
+  data.table::fwrite(expo_abs,
     file = file.path(result_dir, paste0(mut_type, "_", attr(sig, "call_method"), "_absolute_exposure.csv"))
+  )
+
+
+  expo_abs_long <- expo_abs %>%
+    tidyr::pivot_longer(
+      cols = colnames(expo_abs)[-1],
+      names_to = "sig",
+      values_to = "expo"
+    )
+  p <- show_group_distribution(expo_abs_long, gvar = "sig", dvar = "expo")
+  ggsave(file.path(
+    result_dir,
+    paste0(
+      mut_type, "_",
+      attr(sig, "call_method"), "_exposure_distribution_absolute.pdf"
+    )
+  ),
+  plot = p, height = 4, width = 1 * sig$K
   )
 
   message("Outputing sample clusters based on relative signature exposures.")
@@ -173,6 +213,24 @@ output_sig <- function(sig, result_dir, mut_type = "SBS") {
     )
     data.table::fwrite(sim$best_match %>% data.table::as.data.table(),
       file = file.path(result_dir, paste0(mut_type, "_", attr(sig, "call_method"), "_legacy_COSMIC_best_match.csv"))
+    )
+  }
+
+  if (attr(sig, "call_method") == "BayesianNMF") {
+    data.table::fwrite(
+      sig$Raw$summary_run,
+      file = file.path(result_dir, paste0(mut_type, "_", attr(sig, "call_method"), "_signature_number_survey.csv"))
+    )
+  }
+
+  if (attr(sig, "call_method") == "SigProfiler") {
+    data.table::fwrite(
+      sig$Stats$samples,
+      file = file.path(result_dir, paste0(mut_type, "_", attr(sig, "call_method"), "_sample_stats.csv"))
+    )
+    data.table::fwrite(
+      sig$Stats$signatures,
+      file = file.path(result_dir, paste0(mut_type, "_", attr(sig, "call_method"), "_signature_stats.csv"))
     )
   }
 

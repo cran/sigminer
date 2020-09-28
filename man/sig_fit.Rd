@@ -28,14 +28,16 @@ columns representing samples, typically you can get \code{nmf_matrix} from \code
 transpose it by \code{t()}.}
 
 \item{sig}{a \code{Signature} object obtained either from \link{sig_extract} or \link{sig_auto_extract},
-or just a raw signature matrix with row representing components (motifs) and
+or just a raw signature matrix/\code{data.frame} with row representing components (motifs) and
 column representing signatures.}
 
 \item{sig_index}{a vector for signature index. "ALL" for all signatures.}
 
-\item{sig_db}{can be 'legacy' (for COSMIC v2 'SBS'),
+\item{sig_db}{default 'legacy', it can be 'legacy' (for COSMIC v2 'SBS'),
 'SBS', 'DBS', 'ID' and 'TSB' (for SBS transcriptional strand bias signatures).
-Default 'legacy'.}
+For more specific details, it can also be 'SBS_hg19', 'SBS_hg38',
+'SBS_mm9', 'SBS_mm10', 'DBS_hg19', 'DBS_hg38', 'DBS_mm9', 'DBS_mm10'.
+But the signature profile for different genome builds are basically same.}
 
 \item{db_type}{only used when \code{sig_db} is enabled.
 "" for keeping default, "human-exome" for transforming to exome frequency of component,
@@ -113,21 +115,6 @@ if (requireNamespace("quadprog", quietly = TRUE)) {
   show_groups(z)
 }
 
-if (requireNamespace("GenSA", quietly = TRUE)) {
-  H_infer <- sig_fit(V, W, method = "SA")
-  H_infer
-  H
-
-  H_dt <- sig_fit(V, W, method = "SA", return_class = "data.table")
-  H_dt
-
-  ## Modify arguments to method
-  sig_fit(V, W, method = "SA", maxit = 10, temperature = 100)
-
-  ## Show results
-  show_sig_fit(H_infer)
-  show_sig_fit(H_dt)
-}
 }
 \references{
 Daniel Huebschmann, Zuguang Gu and Matthias Schlesner (2019). YAPSA: Yet Another Package for Signature Analysis. R package version 1.12.0.

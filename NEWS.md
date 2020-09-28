@@ -1,3 +1,25 @@
+# sigminer 1.0.19
+
+- Added more specific reference signatures from SigProfiler, e.g. `SBS_mm9`.
+- Supported `data.frame` as input object for `sig` in `get_sig_similarity()` and `sig_fit()`.
+- Modified `g_label` option in `show_group_distribution()` to better control group names. 
+- Added `test` option and variable checking in `show_cor()`.
+- Updated `output_sig()` to output signature exposure distribution ([#280](https://github.com/ShixiangWang/sigminer/issues/280)).
+- Added `show_cor()` for general association analysis.
+- Added options in `show_group_distribution()` to control segments.
+
+# sigminer 1.0.18
+
+- Fixed bugs when outputing only 1 signatures.
+- Fixed label inverse bug in `add_labels()`, thanks to TaoTao for reporting.
+
+# sigminer 1.0.17
+
+- Handled `,` seperated indices in show_cosmic_signatures.
+- Added option `set_order` in `get_sig_similarity()` (#274).
+- Outputed more stats information in `output_sig()`.
+- Fixed default y axis title in `show_sig_bootstrap_error()`, now it is "Reconstruction error (L2 norm)"
+
 # sigminer 1.0.16
 
 - Added `auto_reduce` option in `sig_fit*` functions to improve signature fitting.
