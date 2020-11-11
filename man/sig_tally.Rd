@@ -13,6 +13,7 @@ sig_tally(object, ...)
   method = "Wang",
   ignore_chrs = NULL,
   indices = NULL,
+  add_loh = FALSE,
   feature_setting = sigminer::CN.features,
   type = c("probability", "count"),
   reference_components = FALSE,
@@ -47,12 +48,14 @@ sig_tally(object, ...)
 \item{...}{custom setting for operating object. Detail see S3 method for
 corresponding class (e.g. \code{CopyNumber}).}
 
-\item{method}{method for feature classfication, can be one of "Macintyre" ("M"),
+\item{method}{method for feature classification, can be one of "Macintyre" ("M"),
 "Wang" ("W").}
 
 \item{ignore_chrs}{Chromsomes to ignore from analysis. e.g. chrX and chrY.}
 
 \item{indices}{integer vector indicating segments to keep.}
+
+\item{add_loh}{flag to add LOH classifications.}
 
 \item{feature_setting}{a \code{data.frame} used for classification.
 \strong{Only used when method is "Wang" ("W")}.
@@ -122,7 +125,7 @@ For a \code{MAF} object, this will just return the most useful matrix.}
 \strong{NOTE}: the result counts of 'B' and 'N' labels are a little different from
 SigProfilerMatrixGenerator, the reason is unknown (may be caused by annotation file).}
 
-\item{use_syn}{Logical. Whether to include synonymous variants in analysis. Defaults to TRUE}
+\item{use_syn}{Logical. If \code{TRUE}, include synonymous variants in analysis.}
 }
 \value{
 a \code{list} contains a \code{matrix} used for NMF de-composition.

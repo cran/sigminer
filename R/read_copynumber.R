@@ -6,7 +6,7 @@
 #' summary.
 #' @param input a `data.frame` or a file or a directory contains copy number profile.
 #' @param pattern an optional regular expression used to select part of files if
-#' `input` is a directory, more detail please see [list.files] function.
+#' `input` is a directory, more detail please see [list.files()] function.
 #' @param ignore_case logical. Should pattern-matching be case-insensitive?
 #' @param seg_cols four strings used to specify chromosome, start position,
 #'  end position and copy number value in `input`, respectively.
@@ -14,6 +14,14 @@
 #' @param samp_col a character used to specify the sample column name. If `input`
 #' is a directory and cannot find `samp_col`, sample names will use file names
 #' (set this parameter to `NULL` is recommended in this case).
+#' @param add_loh if `TRUE`, add LOH labels to segments. **NOTE** a column
+#' 'minor_cn' must exist to indicate minor allele copy number value.
+#' Sex chromosome will not be labeled.
+#' @param loh_min_len The length cut-off for labeling a segment as 'LOH'.
+#' Default is `10Kb`.
+#' @param loh_min_frac When `join_adj_seg` set to `TRUE`, only the length fraction
+#' of LOH region is larger than this value will be labeled as 'LOH'.
+#' Default is 30%.
 #' @param join_adj_seg if `TRUE` (default), join adjacent segments with
 #' same copy number value. This is helpful for precisely count the number of breakpoint.
 #' When set `use_all=TRUE`, the mean function will be applied to extra numeric columns
@@ -29,7 +37,7 @@
 #' this option is useful for WES and target sequencing.
 #' Set 'wg' will use autosome size from genome build, this option is useful for WGS, SNP etc..
 #' @param complement if `TRUE`, complement chromosome (except 'Y') does not show in input data
-#' with normal copy 2 and force `use_all` to `FALSE` (no matter what user input).
+#' with normal copy 2.
 #' @param ... other parameters pass to [data.table::fread()]
 #' @author Shixiang Wang <w_shixiang@163.com>
 #' @return a [CopyNumber] object.
@@ -46,6 +54,14 @@
 #' cn
 #' cn_subset <- subset(cn, sample == "TCGA-DF-A2KN-01A-11D-A17U-01")
 #'
+#' # Add LOH
+#' set.seed(1234)
+#' segTabs$minor_cn = sample(c(0, 1), size = nrow(segTabs), replace = TRUE)
+#' cn <- read_copynumber(segTabs,
+#'   seg_cols = c("chromosome", "start", "end", "segVal"),
+#'   genome_measure = "wg", complement = TRUE, add_loh = TRUE
+#' )
+#'
 #' tab_file <- system.file("extdata", "metastatic_tumor.segtab.txt",
 #'   package = "sigminer", mustWork = TRUE
 #' )
@@ -61,14 +77,17 @@ read_copynumber <- function(input,
                             ignore_case = FALSE,
                             seg_cols = c("Chromosome", "Start.bp", "End.bp", "modal_cn"),
                             samp_col = "sample",
+                            add_loh = FALSE,
+                            loh_min_len = 1e4,
+                            loh_min_frac = 0.05,
                             join_adj_seg = TRUE,
                             skip_annotation = FALSE,
-                            use_all = FALSE,
+                            use_all = add_loh,
                             min_segnum = 0L,
                             max_copynumber = 20L,
                             genome_build = c("hg19", "hg38", "mm10"),
                             genome_measure = c("called", "wg"),
-                            complement = TRUE,
+                            complement = FALSE,
                             ...) {
   stopifnot(
     is.character(samp_col),
@@ -86,6 +105,12 @@ read_copynumber <- function(input,
 
   send_info("Genome build  : ", genome_build, ".")
   send_info("Genome measure: ", genome_measure, ".")
+
+  if (add_loh) {
+    use_all <- TRUE
+    send_info("When add_loh is TRUE, use_all is forced to TRUE.
+              Please drop columns you don't want to keep before reading.")
+  }
 
   # get chromosome lengths
   if (genome_build == "mm10") {
@@ -198,14 +223,10 @@ read_copynumber <- function(input,
             chrlen[["size"]][miss_index],
             2
           )]
-          temp <- rbind(temp, comp_df)
+          comp_df[, setdiff(colnames(comp_df),
+                         c("chromosome", "start", "end", "segVal", "sample")) := NA]
+          temp <- rbind(temp, comp_df, fill = TRUE)
         }
-
-        cli::cli_status_update(
-          id = sb,
-          "{symbol$arrow_right} 'complement' option is TRUE, thus use_all automatically set to FALSE."
-        )
-        use_all <- FALSE
       }
 
       if (!use_all) temp <- temp[, new_cols, with = FALSE]
@@ -316,13 +337,13 @@ read_copynumber <- function(input,
             chrlen[["size"]][miss_index],
             2
           )]
-          comp <- rbind(comp, comp_df)
+          comp <- rbind(comp, comp_df, fill = TRUE)
         }
       }
-      temp <- rbind(temp, comp)
+      comp[, setdiff(colnames(comp),
+                     c("chromosome", "start", "end", "segVal", "sample")) := NA]
+      temp <- rbind(temp, comp, fill = TRUE)
       send_success("Value 2 (normal copy) filled to uncalled chromosomes.")
-      use_all <- FALSE
-      send_info("'complement' is TRUE, thus use_all automatically set to FALSE.")
     }
 
     if (!use_all) temp <- temp[, new_cols, with = FALSE]
@@ -356,7 +377,7 @@ read_copynumber <- function(input,
 
   # reset copy number for high copy number segments
   data_df$segVal[data_df$segVal > max_copynumber] <- max_copynumber
-  # make sure seg value is integer
+  # make sure seg copy number value is integer
   data_df[["segVal"]] <- as.integer(round(data_df[["segVal"]]))
   # make sure position is numeric
   data_df$start <- as.numeric(data_df$start)
@@ -365,9 +386,24 @@ read_copynumber <- function(input,
   data.table::setorderv(data_df, c("sample", "chromosome", "start"))
   send_success("Segments sorted.")
 
+  if (add_loh) {
+    send_info("Adding LOH labels...")
+    if (!"minor_cn" %in% colnames(data_df)) {
+      send_stop("When you want to add LOH infor, a column named as 'minor_cn' should exist!")
+    }
+    data_df$loh <- data_df$segVal >= 1 & data_df$minor_cn == 0 &
+      (data_df$end - data_df$start > loh_min_len - 1)
+    # We don't label sex chromosomes
+    data_df[data_df$chromosome %in% c("chrX", "chrY")]$loh = FALSE
+  }
+
   if (join_adj_seg) {
     send_info("Joining adjacent segments with same copy number value. Be patient...")
-    data_df <- helper_join_segments2(data_df)
+    # When LOH regions have same total copy number values as adjacent
+    # regions, only label the segments harbor LOH with minimal length fraction
+    data_df <- helper_join_segments2(data_df,
+                                     add_loh = add_loh,
+                                     loh_min_frac = loh_min_frac)
     send_success(nrow(data_df), " segments left after joining.")
   } else {
     send_info("Skipped joining adjacent segments with same copy number value.")

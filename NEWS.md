@@ -1,3 +1,28 @@
+# sigminer 1.1.0
+
+- Added data simulation.
+- Suppressed `future` warnings.
+- Fixed p value calculation in bootstrap analysis.
+- Fixed typo in `show_cor()`, thanks to @Miachol.
+- Added `y_tr` option in `show_sig_profile()` to transform y axis values.
+- Optimized default behavior of `read_copynumber()`.
+  - Support LOH records when user input minor allele copy number.
+  - Set `complement = FALSE` as default.
+  - Free dependencies between option `use_all` and `complement`.
+- Added visualization support for genome rearrangement signatures (#300).
+- Added four database for reference signatures from <https://doi.org/10.1038/s43018-020-0027-5> (#299).
+- Added new measure 'CV' for `show_sig_bootstrap()` (#298).
+- Added `group_enrichment()` and `show_group_enrichment()` (#277).
+- Optimized signature profile visualization (#295).
+- Updated `?sigminer` documentation.
+- Added `ms` strategy to select optimal solution by maximizing cosine similarity
+to reference signatures.
+- Added `same_size_clustering()` for same size clustering.
+- Added `show_cosmic()` to support reading COSMIC signatures in web browser (#288).
+- Changed argument `rel_threshold` behavior in `sig_fit()` and `get_sig_exposure()`.
+Made them more consistent and allowed un-assigned signature contribution (#285).
+- Updated all COSMIC signatures to v3.1 and their aetiologies (#287).
+
 # sigminer 1.0.19
 
 - Added more specific reference signatures from SigProfiler, e.g. `SBS_mm9`.

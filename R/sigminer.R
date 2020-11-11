@@ -1,8 +1,10 @@
 #' sigminer: Extract, Analyze and Visualize Signatures for Genomic Variations
 #'
-#' Please go to <https://shixiangwang.github.io/sigminer-doc/> for full vignette.
-#'
-#' Result visualization for [MAF] is provide by **maftools** package,
+#' - Author: [Shixiang Wang](https://shixiangwang.github.io/home/) (<w_shixiang@163.com>)
+#' - Please go to <https://shixiangwang.github.io/sigminer-doc/> for full vignette.
+#' - Please go to <https://shixiangwang.github.io/sigminer/reference/index.html>
+#' for organized documentation of functions and datasets.
+#' - Result visualization for [MAF] is provide by **maftools** package,
 #' please read its [vignette](https://bioconductor.org/packages/release/bioc/vignettes/maftools/inst/doc/maftools.html).
 #'
 #'
@@ -12,9 +14,10 @@
 #' @importFrom furrr future_pmap
 #' @importFrom foreach foreach %dopar%
 #' @importFrom graphics hist
-#' @importFrom grDevices colorRampPalette
-#' @importFrom stats as.formula fisher.test pairwise.table quantile setNames
+#' @importFrom grDevices colorRampPalette pdf dev.off
+#' @importFrom stats as.formula t.test fisher.test pairwise.table quantile setNames dist kmeans
 #' @importFrom utils data download.file head packageDescription
+#' @import NMF
 #' @import ggplot2
 #' @import cli
 #' @name sigminer

@@ -125,8 +125,9 @@ sig_tally <- function(object, ...) {
 
 #' @describeIn sig_tally Returns copy number features, components and component-by-sample matrix
 #' @param indices integer vector indicating segments to keep.
-#' @param method method for feature classfication, can be one of "Macintyre" ("M"),
+#' @param method method for feature classification, can be one of "Macintyre" ("M"),
 #' "Wang" ("W").
+#' @param add_loh flag to add LOH classifications.
 #' @param feature_setting a `data.frame` used for classification.
 #' **Only used when method is "Wang" ("W")**.
 #' Default is [CN.features]. Users can also set custom input with "feature",
@@ -177,6 +178,7 @@ sig_tally.CopyNumber <- function(object,
                                  method = "Wang",
                                  ignore_chrs = NULL,
                                  indices = NULL,
+                                 add_loh = FALSE,
                                  feature_setting = sigminer::CN.features,
                                  type = c("probability", "count"),
                                  reference_components = FALSE,
@@ -189,9 +191,9 @@ sig_tally.CopyNumber <- function(object,
                                  keep_only_matrix = FALSE,
                                  ...) {
   stopifnot(is.logical(reference_components) | is.list(reference_components) | is.null(reference_components))
-  method <- match.arg(method, choices = c("Macintyre", "M", "Wang", "W", "Tao & Wang", "T"))
+  method <- match.arg(method, choices = c("Macintyre", "M", "Wang", "W", "Tao & Wang", "T", "X"))
 
-  if (startsWith(method, "T")) {
+  if (startsWith(method, "T") | method == "X") {
     send_warning("Currently, the method 'T' is in experimental stage, please don't use it for now!")
     ## Add segment index for method "T" so the segments can be easily joined or checked
     cn_list <- get_cnlist(object, ignore_chrs = ignore_chrs, add_index = TRUE)
@@ -292,18 +294,29 @@ sig_tally.CopyNumber <- function(object,
     # cn_matrix[is.na(cn_matrix)] <- 0L
     feature_setting$n_obs <- colSums(cn_matrix, na.rm = TRUE)
   } else {
-    # Method: Tao & Wang, 'T'
+    # Method: Shixiang Wang, Ziyu Tao and Tao Wu, short with 'T'
     send_info("Step: getting copy number features.")
-    cn_features <- get_features_mutex(CN_data = cn_list, cores = cores)
+    cn_features <- get_features_mutex(CN_data = cn_list,
+                                      add_loh = add_loh,
+                                      # 'X' for final version
+                                      XVersion = method == "X",
+                                      cores = cores)
     send_success("Gotten.")
 
     send_info("Step: generating copy number components based on combination.")
-    cn_components <- get_components_mutex(cn_features)
+    cn_components <- get_components_mutex(cn_features, XVersion = method == "X")
     send_success("Classified and combined.")
 
     send_info("Step: generating components by sample matrix.")
-    cn_matrix_list <- get_matrix_mutex(cn_components, indices = indices)
-    cn_matrix <- cn_matrix_list$s_mat
+    if (method != "X") {
+      cn_matrix_list <- get_matrix_mutex(cn_components,
+                                         indices = indices)
+    } else {
+      cn_matrix_list <- get_matrix_mutex_xv(cn_components,
+                                            indices = indices)
+    }
+
+    cn_matrix <- cn_matrix_list$ss_mat
 
     if (keep_only_matrix) {
       send_info("When keep_only_matrix is TRUE, only standard matrix kept.")
@@ -324,19 +337,28 @@ sig_tally.CopyNumber <- function(object,
       para_df <- feature_setting
     } else if (startsWith(method, "T")) {
       para_df <- "Message: No this info for method T."
+    } else if (startsWith(method, "X")) {
+      para_df <- "Message: No this info for method X."
     }
 
-    if (startsWith(method, "T")) {
+    if (startsWith(method, "T") | method == "X") {
       res_list <- list(
         features = cn_features,
         components = cn_components,
         parameters = para_df,
         nmf_matrix = cn_matrix,
-        all_matrices = list(
-          simplified_matrix = cn_matrix_list$ss_mat,
-          standard_matrix = cn_matrix_list$s_mat,
-          complex_matrix = cn_matrix_list$c_mat
-        )
+        all_matrices = if (method == "X") {
+          list(
+            simplified_matrix = cn_matrix_list$ss_mat,
+            standard_matrix = cn_matrix_list$s_mat
+          )
+        } else {
+          list(
+            simplified_matrix = cn_matrix_list$ss_mat,
+            standard_matrix = cn_matrix_list$s_mat,
+            complex_matrix = cn_matrix_list$c_mat
+          )
+        }
       )
     } else {
       res_list <- list(
@@ -365,7 +387,7 @@ sig_tally.CopyNumber <- function(object,
 #' **NOTE**: the result counts of 'B' and 'N' labels are a little different from
 #' SigProfilerMatrixGenerator, the reason is unknown (may be caused by annotation file).
 #' @param ignore_chrs Chromsomes to ignore from analysis. e.g. chrX and chrY.
-#' @param use_syn Logical. Whether to include synonymous variants in analysis. Defaults to TRUE
+#' @param use_syn Logical. If `TRUE`, include synonymous variants in analysis.
 #' @references Mayakonda, Anand, et al. "Maftools: efficient and comprehensive analysis of somatic variants in cancer." Genome research 28.11 (2018): 1747-1756.
 #' @references Roberts SA, Lawrence MS, Klimczak LJ, et al. An APOBEC Cytidine Deaminase Mutagenesis Pattern is Widespread in Human Cancers. Nature genetics. 2013;45(9):970-976. doi:10.1038/ng.2702.
 #' @references Bergstrom EN, Huang MN, Mahto U, Barnes M, Stratton MR, Rozen SG, Alexandrov LB: SigProfilerMatrixGenerator: a tool for visualizing and exploring patterns of small mutational events. BMC Genomics 2019, 20:685 https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-019-6041-2
@@ -425,6 +447,8 @@ sig_tally.MAF <- function(object, mode = c("SBS", "DBS", "ID", "ALL"),
     query = "Variant_Type %in% c('SNP', 'DNP', 'INS', 'DEL')", fields = "Chromosome",
     includeSyn = use_syn, mafObj = FALSE
   )
+  # Check NA in Reference_Allele Tumor_Seq_Allele2
+  query <- query[!is.na(query$Reference_Allele) & !is.na(query$Tumor_Seq_Allele2)]
   send_success("Variants from MAF object queried.")
 
   # Remove unwanted contigs

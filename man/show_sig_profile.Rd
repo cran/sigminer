@@ -6,9 +6,10 @@
 \usage{
 show_sig_profile(
   Signature,
-  mode = c("SBS", "copynumber", "DBS", "ID"),
+  mode = c("SBS", "copynumber", "DBS", "ID", "RS"),
   method = "Wang",
   normalize = c("row", "column", "raw", "feature"),
+  y_tr = NULL,
   filters = NULL,
   feature_setting = sigminer::CN.features,
   style = c("default", "cosmic"),
@@ -17,11 +18,14 @@ show_sig_profile(
   free_space = "free_x",
   rm_panel_border = style == "cosmic",
   rm_grid_line = style == "cosmic",
+  rm_axis_text = FALSE,
   bar_border_color = ifelse(style == "default", "grey50", "white"),
   bar_width = 0.7,
   paint_axis_text = TRUE,
-  x_label_angle = ifelse(mode == "copynumber" & !startsWith(method, "T"), 60, 90),
-  x_label_vjust = ifelse(mode == "copynumber" & !startsWith(method, "T"), 1, 0.5),
+  x_label_angle = ifelse(mode == "copynumber" & !(startsWith(method, "T") | method ==
+    "X"), 60, 90),
+  x_label_vjust = ifelse(mode == "copynumber" & !(startsWith(method, "T") | method ==
+    "X"), 1, 0.5),
   x_label_hjust = 1,
   x_lab = "Components",
   y_lab = "auto",
@@ -43,14 +47,17 @@ show_sig_profile(
 or just a raw signature matrix with row representing components (motifs) and column
 representing signatures (column names must start with 'Sig').}
 
-\item{mode}{signature type for plotting, now supports 'copynumber', 'SBS', 'DBS' and 'ID'.}
+\item{mode}{signature type for plotting, now supports 'copynumber', 'SBS',
+'DBS', 'ID' and 'RS' (genome rearrangement signature).}
 
-\item{method}{method for copy number feature classfication in \link{sig_tally},
+\item{method}{method for copy number feature classification in \link{sig_tally},
 can be one of "Macintyre" ("M"), "Wang" ("W").}
 
 \item{normalize}{one of 'row', 'column', 'raw' and "feature", for row normalization (signature),
 column normalization (component), raw data, row normalization by feature, respectively.
 Of note, 'feature' only works when the mode is 'copynumber'.}
+
+\item{y_tr}{a function (e.g. \code{log10}) to transform y axis before plotting.}
 
 \item{filters}{a pattern used to select components to plot.}
 
@@ -80,6 +87,9 @@ This setting has no effect unless the appropriate scales also vary.}
 remove panel border to keep plot tight.}
 
 \item{rm_grid_line}{default is \code{FALSE}, if \code{TRUE}, remove grid lines of plot.}
+
+\item{rm_axis_text}{default is \code{FALSE}, if \code{TRUE}, remove component texts.
+This is useful when multiple signature profiles are plotted together.}
 
 \item{bar_border_color}{the color of bar border.}
 
@@ -116,7 +126,7 @@ data.}
 \item{font_scale}{a number used to set font scale.}
 
 \item{sig_names}{set name of signatures, can be a character vector.
-Default is \code{NULL}, prefix 'Sig_' plus number is used.}
+Default is \code{NULL}, prefix 'Sig' plus number is used.}
 
 \item{sig_orders}{set order of signatures, can be a character vector.
 Default is \code{NULL}, the signatures are ordered by alphabetical order.
@@ -139,6 +149,10 @@ load(system.file("extdata", "toy_mutational_signature.RData",
 # Show signature profile
 p1 <- show_sig_profile(sig2, mode = "SBS")
 p1
+
+# Use 'y_tr' option to transform values in y axis
+p11 <- show_sig_profile(sig2, mode = "SBS", y_tr = function(x) x * 100)
+p11
 
 # Load copy number signature from method "W"
 load(system.file("extdata", "toy_copynumber_signature_by_W.RData",
@@ -180,6 +194,13 @@ p4 <- show_sig_profile(sig,
   params = params, y_expand = 2
 )
 p4
+
+# Visualize rearrangement signatures
+s <- get_sig_db("RS_Nik_lab")
+ss <- s$db[, 1:3]
+colnames(ss) <- c("Sig1", "Sig2", "Sig3")
+p5 <- show_sig_profile(ss, mode = "RS", style = "cosmic")
+p5
 }
 \seealso{
 \link{show_sig_profile_loop}, \link{show_sig_profile_heatmap}

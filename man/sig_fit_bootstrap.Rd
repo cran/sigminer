@@ -36,11 +36,17 @@ column representing signatures.}
 
 \item{sig_index}{a vector for signature index. "ALL" for all signatures.}
 
-\item{sig_db}{default 'legacy', it can be 'legacy' (for COSMIC v2 'SBS'),
-'SBS', 'DBS', 'ID' and 'TSB' (for SBS transcriptional strand bias signatures).
+\item{sig_db}{default 'legacy', it can be 'legacy' (for \href{https://cancer.sanger.ac.uk/cosmic/signatures_v2.tt/}{COSMIC v2 'SBS'}),
+'SBS', 'DBS', 'ID' and 'TSB' (for \href{https://cancer.sanger.ac.uk/cosmic/signatures/}{COSMIV v3.1 signatures}).
 For more specific details, it can also be 'SBS_hg19', 'SBS_hg38',
-'SBS_mm9', 'SBS_mm10', 'DBS_hg19', 'DBS_hg38', 'DBS_mm9', 'DBS_mm10'.
-But the signature profile for different genome builds are basically same.}
+'SBS_mm9', 'SBS_mm10', 'DBS_hg19', 'DBS_hg38', 'DBS_mm9', 'DBS_mm10' to use
+COSMIC v3 reference signatures from Alexandrov, Ludmil B., et al. (2020) (reference #1).
+In addition, it can be one of "SBS_Nik_lab_Organ", "RS_Nik_lab_Organ",
+"SBS_Nik_lab", "RS_Nik_lab" to refer reference signatures from
+Degasperi, Andrea, et al. (2020) (reference #2).
+\strong{Note}: the signature profile for different genome builds are basically same.
+And specific database (e.g. 'SBS_mm10') contains less signatures than all COSMIC
+signatures (because some signatures are not detected from Alexandrov, Ludmil B., et al. (2020)).}
 
 \item{db_type}{only used when \code{sig_db} is enabled.
 "" for keeping default, "human-exome" for transforming to exome frequency of component,
@@ -50,7 +56,7 @@ Currently only works for 'SBS'.}
 \item{show_index}{if \code{TRUE}, show valid indices.}
 
 \item{method}{method to solve the minimazation problem.
-'NNLS' for nonnegative least square; 'QP' for quadratic programming; 'SA' for simulated annealing.}
+'NNLS' for non-negative least square; 'QP' for quadratic programming; 'SA' for simulated annealing.}
 
 \item{auto_reduce}{if \code{TRUE}, try reducing the input reference signatures to increase
 the cosine similarity of reconstructed profile to observed profile.}
@@ -60,10 +66,13 @@ bootstrap samples.}
 
 \item{type}{'absolute' for signature exposure and 'relative' for signature relative exposure.}
 
-\item{rel_threshold}{numeric vector, a relative exposure lower than this value will be set to 0.
-Of note, this is a little different from the same parameter in \link{get_sig_exposure}.}
+\item{rel_threshold}{numeric vector, a signature with relative exposure
+lower than (equal is included, i.e. \code{<=}) this value will be set to 0
+(both absolute exposure and relative exposure).
+In this case, sum of signature contribution may not equal to 1.}
 
-\item{mode}{signature type for plotting, now supports 'copynumber', 'SBS', 'DBS' and 'ID'.}
+\item{mode}{signature type for plotting, now supports 'copynumber', 'SBS',
+'DBS', 'ID' and 'RS' (genome rearrangement signature).}
 
 \item{find_suboptimal}{logical, if \code{TRUE}, find suboptimal decomposition with
 slightly higher error than the optimal solution by method 'SA'. This is useful

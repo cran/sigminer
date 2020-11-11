@@ -10,14 +10,17 @@ read_copynumber(
   ignore_case = FALSE,
   seg_cols = c("Chromosome", "Start.bp", "End.bp", "modal_cn"),
   samp_col = "sample",
+  add_loh = FALSE,
+  loh_min_len = 10000,
+  loh_min_frac = 0.05,
   join_adj_seg = TRUE,
   skip_annotation = FALSE,
-  use_all = FALSE,
+  use_all = add_loh,
   min_segnum = 0L,
   max_copynumber = 20L,
   genome_build = c("hg19", "hg38", "mm10"),
   genome_measure = c("called", "wg"),
-  complement = TRUE,
+  complement = FALSE,
   ...
 )
 }
@@ -25,7 +28,7 @@ read_copynumber(
 \item{input}{a \code{data.frame} or a file or a directory contains copy number profile.}
 
 \item{pattern}{an optional regular expression used to select part of files if
-\code{input} is a directory, more detail please see \link{list.files} function.}
+\code{input} is a directory, more detail please see \code{\link[=list.files]{list.files()}} function.}
 
 \item{ignore_case}{logical. Should pattern-matching be case-insensitive?}
 
@@ -36,6 +39,17 @@ Default use names from ABSOLUTE calling result.}
 \item{samp_col}{a character used to specify the sample column name. If \code{input}
 is a directory and cannot find \code{samp_col}, sample names will use file names
 (set this parameter to \code{NULL} is recommended in this case).}
+
+\item{add_loh}{if \code{TRUE}, add LOH labels to segments. \strong{NOTE} a column
+'minor_cn' must exist to indicate minor allele copy number value.
+Sex chromosome will not be labeled.}
+
+\item{loh_min_len}{The length cut-off for labeling a segment as 'LOH'.
+Default is \verb{10Kb}.}
+
+\item{loh_min_frac}{When \code{join_adj_seg} set to \code{TRUE}, only the length fraction
+of LOH region is larger than this value will be labeled as 'LOH'.
+Default is 30\%.}
 
 \item{join_adj_seg}{if \code{TRUE} (default), join adjacent segments with
 same copy number value. This is helpful for precisely count the number of breakpoint.
@@ -59,7 +73,7 @@ this option is useful for WES and target sequencing.
 Set 'wg' will use autosome size from genome build, this option is useful for WGS, SNP etc..}
 
 \item{complement}{if \code{TRUE}, complement chromosome (except 'Y') does not show in input data
-with normal copy 2 and force \code{use_all} to \code{FALSE} (no matter what user input).}
+with normal copy 2.}
 
 \item{...}{other parameters pass to \code{\link[data.table:fread]{data.table::fread()}}}
 }
@@ -82,6 +96,14 @@ cn <- read_copynumber(segTabs,
 )
 cn
 cn_subset <- subset(cn, sample == "TCGA-DF-A2KN-01A-11D-A17U-01")
+
+# Add LOH
+set.seed(1234)
+segTabs$minor_cn = sample(c(0, 1), size = nrow(segTabs), replace = TRUE)
+cn <- read_copynumber(segTabs,
+  seg_cols = c("chromosome", "start", "end", "segVal"),
+  genome_measure = "wg", complement = TRUE, add_loh = TRUE
+)
 
 tab_file <- system.file("extdata", "metastatic_tumor.segtab.txt",
   package = "sigminer", mustWork = TRUE

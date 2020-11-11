@@ -9,12 +9,14 @@
 #' @param Signature a `Signature` object obtained either from [sig_extract] or [sig_auto_extract],
 #' or just a raw signature matrix with row representing components (motifs) and column
 #' representing signatures (column names must start with 'Sig').
-#' @param mode signature type for plotting, now supports 'copynumber', 'SBS', 'DBS' and 'ID'.
-#' @param method method for copy number feature classfication in [sig_tally],
+#' @param mode signature type for plotting, now supports 'copynumber', 'SBS',
+#' 'DBS', 'ID' and 'RS' (genome rearrangement signature).
+#' @param method method for copy number feature classification in [sig_tally],
 #' can be one of "Macintyre" ("M"), "Wang" ("W").
 #' @param normalize one of 'row', 'column', 'raw' and "feature", for row normalization (signature),
 #' column normalization (component), raw data, row normalization by feature, respectively.
 #' Of note, 'feature' only works when the mode is 'copynumber'.
+#' @param y_tr a function (e.g. `log10`) to transform y axis before plotting.
 #' @param filters a pattern used to select components to plot.
 #' @param style plot style, one of 'default' and 'cosmic', works when
 #' parameter `set_gradient_color` is `FALSE`.
@@ -31,6 +33,8 @@
 #' @param rm_panel_border default is `TRUE` for style 'cosmic',
 #' remove panel border to keep plot tight.
 #' @param rm_grid_line default is `FALSE`, if `TRUE`, remove grid lines of plot.
+#' @param rm_axis_text default is `FALSE`, if `TRUE`, remove component texts.
+#' This is useful when multiple signature profiles are plotted together.
 #' @param bar_border_color the color of bar border.
 #' @param bar_width bar width. By default, set to 70% of the resolution of the
 #' data.
@@ -49,7 +53,7 @@
 #' @param digits digits for plotting params of copy number signatures.
 #' @param font_scale a number used to set font scale.
 #' @param sig_names set name of signatures, can be a character vector.
-#' Default is `NULL`, prefix 'Sig_' plus number is used.
+#' Default is `NULL`, prefix 'Sig' plus number is used.
 #' @param sig_orders set order of signatures, can be a character vector.
 #' Default is `NULL`, the signatures are ordered by alphabetical order.
 #' If an integer vector set, only specified signatures are plotted.
@@ -68,6 +72,10 @@
 #' # Show signature profile
 #' p1 <- show_sig_profile(sig2, mode = "SBS")
 #' p1
+#'
+#' # Use 'y_tr' option to transform values in y axis
+#' p11 <- show_sig_profile(sig2, mode = "SBS", y_tr = function(x) x * 100)
+#' p11
 #'
 #' # Load copy number signature from method "W"
 #' load(system.file("extdata", "toy_copynumber_signature_by_W.RData",
@@ -109,15 +117,25 @@
 #'   params = params, y_expand = 2
 #' )
 #' p4
+#'
+#' # Visualize rearrangement signatures
+#' s <- get_sig_db("RS_Nik_lab")
+#' ss <- s$db[, 1:3]
+#' colnames(ss) <- c("Sig1", "Sig2", "Sig3")
+#' p5 <- show_sig_profile(ss, mode = "RS", style = "cosmic")
+#' p5
 #' @testexamples
 #' expect_s3_class(p1, "ggplot")
+#' expect_s3_class(p11, "ggplot")
 #' expect_s3_class(p2, "ggplot")
 #' expect_s3_class(p3, "ggplot")
 #' expect_s3_class(p4, "ggplot")
-# Signature <- s_mat
-show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID"),
+#' expect_s3_class(p5, "ggplot")
+show_sig_profile <- function(Signature,
+                             mode = c("SBS", "copynumber", "DBS", "ID", "RS"),
                              method = "Wang",
                              normalize = c("row", "column", "raw", "feature"),
+                             y_tr = NULL,
                              filters = NULL,
                              feature_setting = sigminer::CN.features,
                              style = c("default", "cosmic"),
@@ -126,11 +144,12 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
                              free_space = "free_x",
                              rm_panel_border = style == "cosmic",
                              rm_grid_line = style == "cosmic",
+                             rm_axis_text = FALSE,
                              bar_border_color = ifelse(style == "default", "grey50", "white"),
                              bar_width = 0.7,
                              paint_axis_text = TRUE,
-                             x_label_angle = ifelse(mode == "copynumber" & !startsWith(method, "T"), 60, 90),
-                             x_label_vjust = ifelse(mode == "copynumber" & !startsWith(method, "T"), 1, 0.5),
+                             x_label_angle = ifelse(mode == "copynumber" & !(startsWith(method, "T") | method == "X"), 60, 90),
+                             x_label_vjust = ifelse(mode == "copynumber" & !(startsWith(method, "T") | method == "X"), 1, 0.5),
                              x_label_hjust = 1,
                              x_lab = "Components",
                              y_lab = "auto",
@@ -160,14 +179,22 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
   }
 
   mode <- match.arg(mode)
-  method <- match.arg(method, choices = c("Macintyre", "M", "Wang", "W", "Tao & Wang", "T"))
+  method <- match.arg(method, choices = c("Macintyre", "M", "Wang", "W", "Tao & Wang", "T", "X"))
   normalize <- match.arg(normalize)
   style <- match.arg(style)
 
   if (normalize == "row") {
     Sig <- apply(Sig, 2, function(x) x / sum(x))
   } else if (normalize == "column") {
-    Sig <- t(apply(Sig, 1, function(x) x / sum(x)))
+    Sig2 <- t(apply(Sig, 1, function(x) x / sum(x)))
+    if (is.null(rownames(Sig2))) {
+      Sig2 <- t(Sig2)
+      colnames(Sig2) <- colnames(Sig)
+      Sig <- Sig2
+    } else {
+      Sig <- Sig2
+    }
+    Sig[is.na(Sig)] <- 1
   }
 
   if (!is.null(filters)) {
@@ -255,14 +282,11 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
       )
     } else {
       ## Ziyu Tao & Tao Wu & Wang
-      if (any(nchar(mat$context) > 12)) {
+      if (any(nchar(mat$context) > 14)) {
         send_stop("Wrong 'method' option or unsupported components.")
       }
-      # mat$base <- sub("^([A-Z]:[A-Z]{2}):[0-9]\\+?:([A-Z]{2})$", "\\1:\\2", mat$context)
-      # mat$context <- sub("^[A-Z]:[A-Z]{2}:([0-9]\\+?):[A-Z]{2}$", "\\1", mat$context)
-      mat$base <- sub("^([A-Z]:[A-Z]{2}):[0-9]\\+?:[A-Z0-9]{2}$", "\\1", mat$context)
-      mat$context <- sub("^[A-Z]:[A-Z]{2}:([0-9]\\+?:[A-Z0-9]{2}$)", "\\1", mat$context)
-      # mat$context <- sub("^[A-Z]:[A-Z]{2}:", "", mat$context)
+      mat$base <- sub("^([A-Z]:[A-Z]{2}):[0-9]-?[0-9]?\\+?(LOH)?:[A-Z0-9]{2,3}$", "\\1", mat$context)
+      mat$context <- sub("^[A-Z]:[A-Z]{2}:([0-9]-?[0-9]?\\+?(LOH)?:[A-Z0-9]{2,3}$)", "\\1", mat$context)
       mat <- tidyr::gather(mat, class, signature, -c("context", "base"))
 
 
@@ -401,6 +425,37 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
         class = factor(class, levels = colnames(Sig))
       )
     }
+  } else if (mode == "RS") {
+    if (nrow(mat) != 32L) {
+      send_stop("'RS' signatures should have 32 components!")
+    }
+    mat %>%
+      dplyr::mutate(
+        is_clustered = startsWith(.data$context, "clustered"),
+        type = sub("(non-)?clustered_([^_]+)_?.*", "\\2", .data$context),
+        base = paste(ifelse(.data$is_clustered, "C", "N"), .data$type, sep = "-"),
+        base = sub("-trans", "", .data$base)
+      ) %>%
+      dplyr::select(-c("is_clustered", "type")) -> mat
+    mat$context <- sub("^.*_([^_]+)$", "\\1", mat$context)
+
+    mat <- tidyr::gather(mat, class, signature, -c("context", "base"))
+
+    mat <- dplyr::mutate(mat,
+                         context = factor(.data$context,
+                                          levels = c(
+                                            "1-10Kb", "10-100Kb",
+                                            "100Kb-1Mb", "1Mb-10Mb",
+                                            ">10Mb", "trans"
+                                          )),
+                         base = factor(.data$base, levels = c(
+                           "C-del", "C-tds",
+                           "C-inv", "C",
+                           "N-del", "N-tds",
+                           "N-inv", "N"
+                         )),
+                         class = factor(class, levels = colnames(Sig))
+    )
   }
 
   if (normalize == "feature") {
@@ -436,6 +491,9 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
     mat[["class"]] <- factor(mat[["class"]])
   }
   # >>>>>>>>>>>>>>>>>>>>>>> Plot
+  if (!is.null(y_tr)) {
+    mat$signature <- y_tr(mat$signature)
+  }
 
   if (set_gradient_color) {
     if (mode == "SBS") {
@@ -505,6 +563,12 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
   } else {
     p <- p + facet_grid(class ~ base, scales = "free", space = free_space)
   }
+
+  p <- p + scale_y_continuous(
+    labels = scales::number_format(
+      accuracy = if (mean(mat$signature[mat$signature > 0]) < 1) 0.01 else NULL)
+  )
+
 
   # Remove prefix to keep space
   if (startsWith(method, "W")) {
@@ -597,7 +661,7 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
 
   p <- p + xlab(x_lab)
 
-  if (y_lab == "auto") {
+  if (identical(y_lab, "auto")) {
     if (normalize == "column") {
       p <- p + ylab("Weights")
     } else if (normalize == "row" | normalize == "feature") {
@@ -607,6 +671,13 @@ show_sig_profile <- function(Signature, mode = c("SBS", "copynumber", "DBS", "ID
     }
   } else {
     p <- p + ylab(y_lab)
+  }
+
+  if (rm_axis_text) {
+    p <- p + theme(
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank()
+    )
   }
 
   if (style != "default" | paint_axis_text) {

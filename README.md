@@ -14,16 +14,16 @@ status](https://codecov.io/gh/ShixiangWang/sigminer/branch/master/graph/badge.sv
 issues](https://img.shields.io/github/issues-closed/ShixiangWang/sigminer.svg)](https://github.com/ShixiangWang/sigminer/issues?q=is%3Aissue+is%3Aclosed)
 [![Lines Of
 Code](https://tokei.rs/b1/github/ShixiangWang/sigminer?category=code)](https://github.com/ShixiangWang/sigminer)
+[![HitCount](https://hits.dwyl.com/ShixiangWang/sigminer.svg)](https://hits.dwyl.com/ShixiangWang/sigminer/)
 
 ## Overview
 
-Genomic alterations including single nucleotide substitution (SBS), copy
-number alteration (CNA), etc. are the major force for cancer
-initialization and development. Due to the specificity of molecular
-lesions caused by genomic alterations, we can generate characteristic
-alteration spectra, called ‘signature’. This package helps users to
-extract, analyze and visualize signatures from genomic alteration
-records, thus providing new insight into cancer study.
+The cancer genome is shaped by various mutational processes over its
+lifetime, stemming from exogenous and cell-intrinsic DNA damage, and
+error-prone DNA replication, leaving behind characteristic mutational
+spectra, termed **mutational signatures**. This package, **sigminer**,
+helps users to extract, analyze and visualize signatures from genome
+alteration records, thus providing new insight into cancer study.
 
 For pipeline tool, please see its co-evolutionary CLI
 [sigflow](https://github.com/ShixiangWang/sigflow).
@@ -44,36 +44,45 @@ For pipeline tool, please see its co-evolutionary CLI
 
 <img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
 
+**Genome rearrangement signatures**:
+
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
+
+> `sig_tally()` for RS is not supported.
+
 ### Feature
 
-  - supports a standard *de novo* pipeline for identification of **4**
-    types of signatures: copy number, SBS, DBS and INDEL
+  - supports a standard *de novo* pipeline for identification of **5**
+    types of signatures: copy number, SBS, DBS, INDEL and RS (genome
+    rearrangement signature).
   - supports quantify exposure for one sample based on *known
-    signatures*
+    signatures*.
   - supports two methods for calling copy number signatures: one is from
-    Macintyre et al. 2018 and the other is created by us
+    Macintyre et al. 2018 and the other is created by our group.
   - supports association and group analysis and visualization for
-    signatures
-  - supports a bayesian variant of NMF algorithm to enable optimal
+    signatures.
+  - supports a Bayesian variant of NMF algorithm to enable optimal
     inferences for the number of signatures through the automatic
-    relevance determination technique from **SignatureAnalyzer** package
+    relevance determination technique from **SignatureAnalyzer**
+    package.
+  - supports a caller for **SigProfiler**.
   - supports two plot styles for signature profile: ‘default’ (like
     **SignatureAnalyzer** package) and ‘cosmic’ (like **COSMIC**
-    database)
-  - supports two types of signatrue exposures: relative exposure
+    database).
+  - supports two types of signature exposures: relative exposure
     (relative contribution of signatures in each sample) and absolute
-    exposure (estimated variation records of signatures in each sample)
+    exposure (estimated variation records of signatures in each sample).
   - supports basic summary and visualization for profile of mutation
-    (powered by **maftools**) and copy number
+    (powered by **maftools**) and copy number.
   - supports parallel computation by R packages **foreach**, **future**
-    and **NMF**
+    and **NMF**.
   - efficient code powered by R packages **data.table** and
-    **tidyverse**
+    **tidyverse**.
   - elegant plots powered by R packages **ggplot2**, **ggpubr**,
-    **cowplot** and **patchwork**
+    **cowplot** and **patchwork**.
   - well tested by R package **testthat** and documented by R package
     **roxygen2**, **roxytest**, **pkgdown**, and etc. for both reliable
-    and reproducible research
+    and reproducible research.
 
 ## Installation
 
@@ -119,7 +128,7 @@ cancer reveal distinct etiologies and clinical outcomes” medRxiv
 
 ## Download Stats
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
 
 ## Acknowledgments
 

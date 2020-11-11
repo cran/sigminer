@@ -65,7 +65,7 @@ col2hex <- function(col, alpha) grDevices::rgb(t(grDevices::col2rgb(col)), alpha
 #' @examples
 #' use_color_style("default")
 #' use_color_style("cosmic")
-use_color_style <- function(style, mode = c("SBS", "copynumber", "DBS", "ID"), method = "Wang") {
+use_color_style <- function(style, mode = c("SBS", "copynumber", "DBS", "ID", "RS"), method = "Wang") {
   # c("red", "cyan", "yellow", "blue", "magenta", "gray50", "orange", "darkgreen", "brown", "black", rainbow(10)[4:10])
   if (style == "default") {
     palette <- c(
@@ -104,10 +104,11 @@ use_color_style <- function(style, mode = c("SBS", "copynumber", "DBS", "ID"), m
         c(74, 152, 201), c(23, 100, 171),
         c(226, 226, 239), c(182, 182, 216),
         c(134, 131, 189), c(98, 64, 155)
-      )
+      ),
+      RS = c("blue", "red", "brown", "purple", "blue", "red", "brown", "purple")
     )
 
-    if (mode == "copynumber" & startsWith(method, "T")) {
+    if (mode == "copynumber" & (startsWith(method, "T") | method == "X")) {
       colors <- list(
         c(226, 226, 239), c(182, 182, 216), c(134, 131, 189), c(98, 64, 155),
         c(253, 202, 181), c(252, 138, 106), c(241, 68, 50), c(188, 25, 26),
@@ -117,7 +118,11 @@ use_color_style <- function(style, mode = c("SBS", "copynumber", "DBS", "ID"), m
       )
     }
 
-    palette <- sapply(colors, FUN = function(x) rgb2hex(x[1], x[2], x[3])) %>% as.character()
+   if (mode != "RS") {
+     palette <- sapply(colors, FUN = function(x) rgb2hex(x[1], x[2], x[3])) %>% as.character()
+   } else {
+     palette <- colors
+   }
 
     if (mode %in% c("copynumber", "SBS")) {
       palette <- c(palette, sapply(c("purple", "brown", "orange"), FUN = col2hex) %>% as.character())
