@@ -1,23 +1,32 @@
 Package: sigminer
 Title: Extract, Analyze and Visualize Mutational Signatures for Genomic
         Variations
-Version: 1.1.0
+Version: 1.2.1
 Authors@R: 
     c(person(given = "Shixiang",
              family = "Wang",
              role = c("aut", "cre"),
              email = "w_shixiang@163.com",
              comment = c(ORCID = "0000-0001-9855-7357")),
+      person(given = "Ziyu",
+             family = "Tao",
+             role = "aut",
+             email = "taozy@shanghaitech.edu.cn",
+             comment = c(ORCID = "0000-0003-3272-1227")),
+      person(given = "Huimin",
+             family = "Li",
+             role = "aut",
+             email = "lihm@shanghaitech.edu.cn",
+             comment = c(ORCID = "0000-0003-1683-9057")),
+      person(given = "Tao",
+             family = "Wu",
+             role = "aut",
+             email = "wutao2@shanghaitech.edu.cn",
+             comment = c(ORCID = "0000-0002-8999-9628")),
       person(given = "Xue-Song",
              family = "Liu",
              role = c("aut", "ctb"),
              comment = c(ORCID = "0000-0002-7736-0077")),
-      person(given = "Tao",
-             family = "Wu",
-             role = c("aut", "ctb")),
-      person(given = "Ziyu",
-             family = "Tao",
-             role = c("aut", "ctb")),
       person(given = "Geoffrey",
              family = "Macintyre",
              role = "ctb"),
@@ -38,15 +47,16 @@ License: MIT + file LICENSE
 URL: https://github.com/ShixiangWang/sigminer
 BugReports: https://github.com/ShixiangWang/sigminer/issues
 Depends: R (>= 3.5)
-Imports: cli (>= 2.0.0), cowplot, data.table, dplyr, foreach, furrr,
-        future, ggplot2 (>= 3.3.0), ggpubr, maftools, magrittr,
+Imports: cli (>= 2.0.0), cowplot, data.table, dplyr, foreach, furrr (>=
+        0.2.0), future, ggplot2 (>= 3.3.0), ggpubr, maftools, magrittr,
         methods, NMF, purrr, Rcpp, rlang (>= 0.1.2), stats, tidyr
 Suggests: Biobase, Biostrings, BSgenome, BSgenome.Hsapiens.UCSC.hg19,
-        circlize, cluster, covr, doFuture, flexmix, GenomicRanges,
-        GenSA, ggalluvial, ggcorrplot, ggfittext, ggplotify, ggrepel,
-        IRanges, knitr, markdown, nnls, patchwork, pheatmap, quadprog,
-        R.utils, RColorBrewer, reticulate, rmarkdown, roxygen2,
-        testthat, tibble, scales, matrixStats
+        circlize, cluster, covr, digest, doFuture, flexmix,
+        GenomicRanges, GenSA, ggalluvial, ggcorrplot, ggfittext,
+        ggplotify, ggrepel, IRanges, knitr, markdown, matrixStats,
+        nnls, patchwork, pheatmap, quadprog, R.utils, RColorBrewer,
+        reticulate, rmarkdown, roxygen2, scales, synchronicity,
+        testthat, tibble, UCSCXenaTools
 LinkingTo: Rcpp
 VignetteBuilder: knitr
 biocViews:
@@ -54,13 +64,14 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: yes
-Packaged: 2020-11-10 15:04:34 UTC; wsx
+Packaged: 2021-01-08 07:12:02 UTC; wsx
 Author: Shixiang Wang [aut, cre] (<https://orcid.org/0000-0001-9855-7357>),
+  Ziyu Tao [aut] (<https://orcid.org/0000-0003-3272-1227>),
+  Huimin Li [aut] (<https://orcid.org/0000-0003-1683-9057>),
+  Tao Wu [aut] (<https://orcid.org/0000-0002-8999-9628>),
   Xue-Song Liu [aut, ctb] (<https://orcid.org/0000-0002-7736-0077>),
-  Tao Wu [aut, ctb],
-  Ziyu Tao [aut, ctb],
   Geoffrey Macintyre [ctb],
   Anand Mayakonda [ctb]
 Maintainer: Shixiang Wang <w_shixiang@163.com>
 Repository: CRAN
-Date/Publication: 2020-11-11 07:40:06 UTC
+Date/Publication: 2021-01-08 09:10:02 UTC

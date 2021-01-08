@@ -46,13 +46,13 @@
 #'   ## Input a list
 #'   report_bootstrap_p_value(list(samp1 = H_bootstrap, samp2 = H_bootstrap))
 #'
-#   ## Find suboptimal decomposition
-#   H_suboptimal <- sig_fit_bootstrap(V[, 1], W,
-#     n = 10,
-#     type = "absolute",
-#     method = "SA",
-#     find_suboptimal = TRUE
-#   )
+#'   #   ## Find suboptimal decomposition
+#'   #   H_suboptimal <- sig_fit_bootstrap(V[, 1], W,
+#'   #     n = 10,
+#'   #     type = "absolute",
+#'   #     method = "SA",
+#'   #     find_suboptimal = TRUE
+#'   #   )
 #' }
 #' @testexamples
 #' expect_is(H_bootstrap, "list")
@@ -190,7 +190,6 @@ sig_fit_bootstrap <- function(catalog,
       catalog_mat <- matrix(catalog_mat, ncol = 1)
       rownames(catalog_mat) <- names(catalog)
     }
-
     Args$catalogue_matrix <- catalog_mat
 
     cli::cli_status_update(id = sb, "{symbol$arrow_right} Total {n} times, starting no.{i}.")
@@ -199,9 +198,10 @@ sig_fit_bootstrap <- function(catalog,
       base::do.call("sig_fit", args = Args)
     )
   })
-
-  cli::cli_status_clear(sb)
-  send_success("Bootstrap done.")
+  cli::cli_status_clear(
+    sb,
+    result = "done",
+    msg_done = "Bootstrap done.")
 
   expo <- res[1, ]
   expo <- sapply(expo, cbind)
@@ -263,11 +263,10 @@ bootstrap_p_value <- function(x, y) {
       p <- my.t.test.p.value(xi, mu = yi, alternative = "greater")
       if (is.na(p)) {
         send_warning("NA result detected from t.test, reporting proportion as p value.")
-        p <- mean(xi <= yi)
+        p <- mean(xi < yi, na.rm = TRUE)
       }
       p
     })
-
   })
   colnames(y_mat) <- paste0("threshold_", y)
   return(y_mat)
@@ -275,5 +274,9 @@ bootstrap_p_value <- function(x, y) {
 
 my.t.test.p.value <- function(...) {
   obj <- try(t.test(...), silent = TRUE)
-  if (is(obj, "try-error")) return(NA) else return(obj$p.value)
+  if (is(obj, "try-error")) {
+    return(NA)
+  } else {
+    return(obj$p.value)
+  }
 }

@@ -3,8 +3,11 @@
 #' Do NMF de-composition and then extract signatures.
 #'
 #' @inheritParams sig_estimate
+#' @inheritParams bp_extract_signatures
 #' @param n_sig number of signature. Please run [sig_estimate] to select a suitable value.
 #' @param optimize if `TRUE`, then refit the denovo signatures with QP method, see [sig_fit].
+#' @param pynmf if `TRUE`, use Python NMF driver [Nimfa](http://nimfa.biolab.si/index.html).
+#' The seed currently is not used by this implementation.
 #' @param ... other arguments passed to [NMF::nmf()].
 #' @author Shixiang Wang
 #' @references Gaujoux, Renaud, and Cathal Seoighe. "A flexible R package for nonnegative matrix factorization." BMC bioinformatics 11.1 (2010): 367.
@@ -17,7 +20,6 @@
 #'   package = "sigminer", mustWork = TRUE
 #' ))
 #' # Extract copy number signatures
-#' library(NMF)
 #' res <- sig_extract(cn_tally_M$nmf_matrix, 2, nrun = 1)
 #' }
 #' @testexamples
@@ -31,8 +33,11 @@ sig_extract <- function(nmf_matrix,
                         cores = 1,
                         method = "brunet",
                         optimize = FALSE,
-                        pConstant = NULL,
+                        pynmf = FALSE,
+                        use_conda = TRUE,
+                        py_path = "/Users/wsx/anaconda3/bin/python",
                         seed = 123456, ...) {
+  eval(parse(text = "suppressMessages(library('NMF'))"))
   # transpose matrix
   mat <- t(nmf_matrix)
 
@@ -45,31 +50,39 @@ sig_extract <- function(nmf_matrix,
     mat <- mat[, !ii, drop = FALSE]
   }
 
-  # To avoid error due to non-conformable arrays
-  if (!is.null(pConstant)) {
-    if (pConstant < 0 | pConstant == 0) {
-      stop("pConstant must be > 0")
-    }
-    mat <- mat + pConstant
+  if (isFALSE(pynmf)) {
+    # To avoid error due to NMF
+    mat <- check_nmf_matrix(mat)
+
+    nmf.res <- NMF::nmf(
+      mat,
+      n_sig,
+      seed = seed,
+      nrun = nrun,
+      method = method,
+      .opt = paste0("vp", cores),
+      ...
+    )
+
+    # Signature loading
+    W <- NMF::basis(nmf.res)
+    # Exposure loading
+    H <- NMF::coef(nmf.res)
+    # Signature number
+    K <- ncol(W)
+  } else {
+    message("Calling python as backend...")
+    env_install(use_conda, py_path, pkg = "nimfa", pkg_version = "1.4.0")
+    reticulate::source_python(system.file("py", "nmf.py", package = "sigminer", mustWork = TRUE))
+
+    result <- MultiNMF(mat, as.integer(n_sig), as.integer(nrun), as.integer(cores))
+    W <- result$W
+    H <- result$H
+    K <- result$K
+
+    rownames(W) <- rownames(mat)
+    colnames(H) <- colnames(mat)
   }
-
-  nmf.res <- NMF::nmf(
-    mat,
-    n_sig,
-    seed = seed,
-    nrun = nrun,
-    method = method,
-    .opt = paste0("p", cores),
-    ...
-  )
-
-
-  # Signature loading
-  W <- NMF::basis(nmf.res)
-  # Exposure loading
-  H <- NMF::coef(nmf.res)
-  # Signature number
-  K <- ncol(W)
 
   ## has_cn just used for method 'W' and 'M' in copy number signature
   has_cn <- grepl("^CN[^C]", rownames(W)) | startsWith(rownames(W), "copynumber")
@@ -103,24 +116,7 @@ sig_extract <- function(nmf_matrix,
   }
 
   # Handle hyper mutant samples
-  hyper_index <- grepl("_\\[hyper\\]_", colnames(Exposure))
-  if (sum(hyper_index) > 0) {
-    H.hyper <- Exposure[, hyper_index, drop = FALSE]
-    H.nonhyper <- Exposure[, !hyper_index, drop = FALSE]
-    sample.hyper <- sapply(
-      colnames(H.hyper),
-      function(x) strsplit(x, "_\\[hyper\\]_")[[1]][[1]]
-    )
-    unique.hyper <- unique(sample.hyper)
-    n.hyper <- length(unique.hyper)
-    x.hyper <- array(0, dim = c(nrow(H.hyper), n.hyper))
-    for (i in 1:n.hyper) {
-      x.hyper[, i] <- rowSums(H.hyper[, sample.hyper %in% unique.hyper[i], drop = FALSE])
-    }
-    colnames(x.hyper) <- unique.hyper
-    rownames(x.hyper) <- rownames(Exposure)
-    Exposure <- cbind(H.nonhyper, x.hyper)
-  }
+  Exposure <- collapse_hyper_records(Exposure)
 
   Signature.norm <- apply(Signature, 2, function(x) x / sum(x, na.rm = TRUE))
   Exposure.norm <- apply(Exposure, 2, function(x) x / sum(x, na.rm = TRUE))
@@ -163,7 +159,7 @@ sig_extract <- function(nmf_matrix,
     Exposure.norm = Exposure.norm,
     K = K,
     Raw = list(
-      nmf_obj = nmf.res,
+      nmf_obj = if (exists("nmf.res")) nmf.res else NULL,
       W = W,
       H = H
     )
@@ -171,7 +167,6 @@ sig_extract <- function(nmf_matrix,
   class(res) <- "Signature"
   attr(res, "nrun") <- nrun
   attr(res, "method") <- method
-  attr(res, "pConstant") <- pConstant
   attr(res, "seed") <- seed
   attr(res, "call_method") <- "NMF"
 

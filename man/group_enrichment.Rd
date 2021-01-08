@@ -20,7 +20,8 @@ into subgroups (at least 2 subgroups, otherwise this variable will be skipped).}
 
 \item{enrich_vars}{character vector specifying measure variables to be compared.
 If variable is not numeric, only binary cases are accepted in the form of
-\code{TRUE/FALSE} or \code{P/N} (P for positive cases and N for negative cases).}
+\code{TRUE/FALSE} or \code{P/N} (P for positive cases and N for negative cases).
+Of note, \code{NA} values set to negative cases.}
 
 \item{cross}{logical, default is \code{TRUE}, combine all situations provided by
 \code{grp_vars} and \code{enrich_vars}. For examples, \code{c('A', 'B')} and \code{c('C', 'D')}
@@ -73,10 +74,12 @@ x1 <- group_enrichment(df, grp_vars = c("g1", "g2"), enrich_vars = c("e1", "e2")
 x1
 
 # Only compare g1:e1, g2:e2
-x2 <- group_enrichment(df, grp_vars = c("g1", "g2"),
-                       enrich_vars = c("e1", "e2"),
-                       co_method = "wilcox.test",
-                       cross = FALSE)
+x2 <- group_enrichment(df,
+  grp_vars = c("g1", "g2"),
+  enrich_vars = c("e1", "e2"),
+  co_method = "wilcox.test",
+  cross = FALSE
+)
 x2
 
 # Visualization
