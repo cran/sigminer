@@ -1,3 +1,47 @@
+# sigminer 1.2.4
+
+## BUG REPORTS
+
+- Fixed the assign problem about match pair in `bp_extract_signatures()` 
+with `lpSolve` package instead of using my problematic code.
+
+## ENHANCEMENTS
+
+- Supported `mm10` in `read_vcf()`.
+- Removed large data files and store them in Zenodo to reduce package size.
+- Added cores check.
+- Upgraded SP to v1.1.0 (need test).
+- Tried installing Torch before SP (need test).
+
+## NEW FUNCTIONS
+
+## DEPRECATED
+
+# sigminer 1.2.2
+
+## BUG REPORTS
+
+- Fixed bug in silhouette calculation in `bp_extract_signatures()` (#332).
+PAY ATTENTION: this may affect results.
+- Fixed bug using custom signature name in `show_sig_profile_loop()`.
+
+## ENHANCEMENTS
+
+- Subset signatures to plot is available by `sig_names` option.
+- sigminer is available in bioconda channel: <https://anaconda.org/bioconda/r-sigminer/>
+- Updated `ms` strategy in `sig_auto_extract()` by assigning each signature to its
+best matched reference signatures.
+- Added `get_shannon_diversity_index()` to get diversity index for signatures (#333).
+- Added new method "S" (from Steele et al. 2019) for tallying copy number data (#329).
+- Included new (RS) reference signatures (related to #331).
+- Updated the internal code for getting relative activity in `get_sig_exposure()`.
+
+## NEW FUNCTIONS
+
+- `bp_get_clustered_sigs()` to get clustered mean signatures.
+
+## DEPRECATED
+
 # sigminer 1.2.1
 
 - Updated author list.

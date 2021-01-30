@@ -251,6 +251,7 @@ get_stat_sigs <- function(runs) {
   )
 
   send_info("\t summarizing sample profile similarity.")
+  # 每个 signature 看作一个类，看一个类中不同 runs 结果的相似性
   sim <- get_similarity_stats(
     sig_array,
     n = dm[2],
@@ -406,20 +407,33 @@ get_similarity_stats <- function(x,
       }
     })
   } else if (type == "between-cluster") {
+    # 找出最近的组（平均相似性最高）
     d <- lapply(seq_len(n), function(i) {
       if (dim(x)[2] >= 2) {
         x1 <- x[, i, ]
-        x2 <- x[, -i, ]
+        x2 <- x[, -i, , drop = FALSE]
 
         if (is.null(dim(x1))) {
           x1 <- matrix(x1, ncol = 1)
         }
-        if (is.null(dim(x2))) {
-          x2 <- matrix(x2, ncol = 1)
+        if (dim(x2)[3] == 1) {
+          dx2 <- dim(x2)
+          dim(x2) <- c(dx2[1], dx2[2] * dx2[3])
+          cosineMatrix(x1, x2)
+        } else {
+          # x2 是 3 维，且第 3 维不止 1
+          d2 <- dim(x2)[2]
+          sim_list <- lapply(seq_len(d2), function(k) {
+            mat <- cosineMatrix(x1, x2[, k, ])
+            if (ncol(mat) > 1) {
+              mat[upper.tri(mat)]
+            } else {
+              mat
+            }
+          })
         }
-
-        dim(x2) <- c(dim(x1)[1], prod(dim(x2)) / dim(x1)[1])
-        cosineMatrix(x1, x2)
+        # dim(x2) <- c(dim(x1)[1], prod(dim(x2)) / dim(x1)[1])
+        sim_list[[which.max(sapply(sim_list, mean))]]
       } else {
         NA
       }
@@ -553,22 +567,8 @@ get_matches <- function(mat, runs) {
   index_uniq <- unique(match_index)
   if (length(match_index) != length(index_uniq)) {
     # Some signatures in the first run is matched by more than once
-    # Order the columns by cum minimum distance
-    min_orders <- get_min_orders(mat)
-    # Assign the match by the order
-    index_uniq <- vector("integer", length = length(match_index))
-    for (i in seq_along(min_orders)) {
-      values_order <- order(mat[, min_orders[i]])
-
-      for (j in seq_along(values_order)) {
-        # possible index
-        pi <- which(values_order == j)
-        if (index_uniq[pi] == 0L) {
-          index_uniq[pi] <- min_orders[i]
-          break()
-        }
-      }
-    }
+    # Solve it with lpSolve package
+    index_uniq <- apply(lpSolve::lp.assign(mat)$solution, 1, which.max)
   }
   out <- data.table::data.table(
     v1 = rownames(mat),
@@ -576,18 +576,6 @@ get_matches <- function(mat, runs) {
   )
   colnames(out) <- runs
   out
-}
-
-get_min_orders <- function(mat) {
-  cummins <- apply(mat, 2, function(x) {
-    cumsum(sort(x))
-  }) %>% t()
-  colnames(cummins) <- paste0("ord", seq_len(ncol(cummins)))
-  cummins %>%
-    dplyr::as_tibble() %>%
-    dplyr::mutate(.i = dplyr::row_number()) %>%
-    dplyr::arrange_at(colnames(cummins)) %>%
-    dplyr::pull(".i")
 }
 
 # My implementation of clustering with match algorithm proposed
@@ -705,15 +693,7 @@ rank_solutions <- function(stats) {
     "silhouette", "sample_cosine_distance", "L2_error",
     "exposure_positive_correlation", "signature_similarity_within_cluster"
   )
-  send_info(
-    "Calculating integrated rank score based on the measures: ",
-    paste(measures, collapse = ", ")
-  )
-  weights <- c(0.25, 0.2, 0.2, 0.1, 0.25)
-  send_info(
-    "Corresponding weights for obtaining the aggregated score are: ",
-    paste(weights, collapse = ", ")
-  )
+
   types <- c("diff", "increase", "increase", "increase", "diff")
 
   rk <- purrr::map2_df(
@@ -734,7 +714,17 @@ rank_solutions <- function(stats) {
     }
   )
 
-  rk$aggregated_score <- as.numeric(as.matrix(rk) %*% weights)
+  measure2 <- c("silhouette", "L2_error")
+  send_info(
+    "Calculating integrated rank score based on the measures: ",
+    paste(measure2, collapse = ", ")
+  )
+  weights <- c(0.4, 0.6)
+  send_info(
+    "Corresponding weights for obtaining the aggregated score are: ",
+    paste(weights, collapse = ", ")
+  )
+  rk$aggregated_score <- as.numeric(as.matrix(rk)[, measure2] %*% weights)
   rk <- cbind(data.frame(signature_number = stats$signature_number), rk)
 
   rk
@@ -864,7 +854,6 @@ optimize_exposure_in_one_sample <- function(catalog,
                                             sample,
                                             sig_matrix,
                                             tmp_dir) {
-
   tmpf_expo <- file.path(
     tmp_dir,
     paste0(sample, "_expo.rds")

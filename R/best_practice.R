@@ -10,9 +10,8 @@
 #' - `bp_extract_signatures()` for extracting signatures.
 #' - `bp_show_survey()` for showing measures change under different
 #' signature numbers to help user select optimal signature number.
-#' At default, an aggregated score (named score) is generated from 5 measures to
-#' suggest the best solution. See section "Measure Explanation in Survey plot"
-#' for more explanation.
+#' At default, an aggregated score (named score) is generated to
+#' suggest the best solution.
 #' - `bp_show_survey2()` for showing simplified signature number survey like
 #' [show_sig_number_survey()].
 #' - `bp_get_sig_obj()` for get a (list of) `Signature` object which is common
@@ -23,9 +22,11 @@
 #' Besides, you can use [sig_fit] to quantify exposures based on signatures extracted
 #' from `bp_extract_signatures()`.
 #' - `bp_extract_signatures_iter()` for extracting signature in a iteration way.
-#' - `bp_cluster_iter_list()` for clustering iterated signatures to help collapse
+#' - `bp_cluster_iter_list()` for clustering (`hclust` with average linkage)
+#' iterated signatures to help collapse
 #' multiple signatures into one. The result cluster can be visualized by
 #' `plot()` or `factoextra::fviz_dend()`.
+#' - `bp_get_clustered_sigs()` for getting clustered (grouped) mean signatures from signature clusters.
 #' - Extra: `bp_get_stats`() for obtaining stats for signatures and samples of a solution.
 #' These stats are aggregated (averaged) as the stats for a solution
 #' (specific signature number).
@@ -41,12 +42,12 @@
 #'
 #' @section Measure Explanation in Survey Plot:
 #' The survey plot provides a pretty good way to facilitate the signature number
-#' selection. A `score` measure is calculated as the weighted mean of 5 important
+#' selection. A `score` measure is calculated as the weighted mean of selected
 #' measures and visualized as the first sub-plot. The optimal number is highlighted
-#' with red color dot and the best values for 5 measures to be weighted are also
+#' with red color dot and the best values for each measures are also
 #' highlighted with orange color dots. The detail of 6 measures shown in plot are
 #' explained as below.
-#' - `score` - an aggregated score based on rank scores from 5 measures below.
+#' - `score` - an aggregated score based on rank scores from selected measures below.
 #' The higher, the better. When two signature numbers have the same score,
 #' the larger signature number is preferred (this is a rare situation, you
 #' have to double check other measures).
@@ -250,6 +251,9 @@ bp_extract_signatures <- function(nmf_matrix,
 
   if (!requireNamespace("synchronicity")) {
     install.packages("synchronicity")
+  }
+  if (!requireNamespace("lpSolve")) {
+    install.packages("lpSolve")
   }
 
   timer <- Sys.time()
@@ -471,7 +475,8 @@ bp_extract_signatures <- function(nmf_matrix,
           .progress = TRUE,
           .options = furrr::furrr_options(
             seed = TRUE,
-            stdout = FALSE)
+            stdout = FALSE
+          )
         )
       } else {
         purrr::map(seq_len(n_bootstrap), call_nmf, cores = cores)
@@ -527,7 +532,8 @@ bp_extract_signatures <- function(nmf_matrix,
       .progress = TRUE,
       .options = furrr::furrr_options(
         seed = seed,
-        stdout = FALSE)
+        stdout = FALSE
+      )
     )
   }
   send_success(
@@ -698,12 +704,13 @@ bp_extract_signatures_iter <- function(nmf_matrix,
 
 #' @param x result from [bp_extract_signatures_iter()] or a list of
 #' `Signature` objects.
+#' @param k an integer sequence specifying the cluster number to get silhouette.
 #' @param include_final_iteration if `FALSE`, exclude final iteration result
 #' from clustering for input from [bp_extract_signatures_iter()], not applied
 #' if input is a list of `Signature` objects.
 #' @rdname bp
 #' @export
-bp_cluster_iter_list <- function(x, include_final_iteration = TRUE) {
+bp_cluster_iter_list <- function(x, k = NULL, include_final_iteration = TRUE) {
   if (length(x) < 2) {
     stop("No need to cluster length-1 result list.")
   }
@@ -725,14 +732,93 @@ bp_cluster_iter_list <- function(x, include_final_iteration = TRUE) {
   cosdist <- 1 - cosineMatrix(sigmat, sigmat)
   rownames(cosdist) <- colnames(cosdist) <- colnames(sigmat)
   # Do clustering
-  cls <- stats::hclust(stats::as.dist(cosdist))
+  distobj <- stats::as.dist(cosdist)
+  cls <- stats::hclust(distobj, method = "average")
+  if (is.null(k)) {
+    # Set default k sequence
+    k <- seq(2, max(sapply(sig_list, ncol)))
+  }
+  sil_df <- purrr::map_df(
+    k,
+    function(x) {
+      cls <- cluster::silhouette(cutree(cls, k = x), distobj)
+      cbind(
+        data.frame(
+          signame = rownames(cosdist),
+          k = x
+        ),
+        data.frame(cls[, 1:3])
+      )
+    }
+  )
+  sil_summary <- sil_df %>%
+    dplyr::group_by(.data$k) %>%
+    dplyr::summarise(
+      min = min(.data$sil_width, na.rm = TRUE),
+      mean = mean(.data$sil_width, na.rm = TRUE),
+      max = max(.data$sil_width, na.rm = TRUE),
+      sd = sd(.data$sil_width, na.rm = TRUE)
+    ) %>%
+    as.data.frame()
   r <- list(
     cluster = cls,
     distance = cosdist,
+    sil_df = sil_df,
+    sil_summary = sil_summary,
     sigmat = sigmat
   )
   class(r) <- "SignatureListClusters"
   r
+}
+
+bp_get_cluster_index_list <- function(x) {
+  rg <- range(x)
+  sq <- seq(rg[1], rg[2])
+  y <- purrr::map(sq, ~ which(x == .))
+  names(y) <- as.character(sq)
+  y
+}
+
+
+#' @param SigClusters result from [bp_cluster_iter_list()].
+#' @param cluster_label cluster labels for a specified cluster number, obtain it
+#' from `SigClusters$sil_df`.
+#' @rdname bp
+#' @export
+bp_get_clustered_sigs <- function(SigClusters, cluster_label) {
+  sig_idx <- bp_get_cluster_index_list(cluster_label)
+  sig_map <- purrr::map(sig_idx, ~ colnames(SigClusters$sigmat)[.])
+  names(sig_map) <- paste0("Sig", names(sig_map))
+  grp_sigs <- purrr::reduce(
+    purrr::map(sig_idx, ~ t(t(rowMeans(SigClusters$sigmat[, ., drop = FALSE])))),
+    cbind
+  )
+  colnames(grp_sigs) <- names(sig_map)
+
+  sim_sig_to_grp_mean <- purrr::map(
+    sig_idx,
+    ~ as.numeric(
+      cosine(
+        SigClusters$sigmat[, ., drop = FALSE],
+        t(t(rowMeans(SigClusters$sigmat[, ., drop = FALSE])))
+      )
+    )
+  )
+  sim_sig_to_grp_mean <- purrr::map2_df(
+    sim_sig_to_grp_mean,
+    sig_idx,
+    ~ data.frame(sig = colnames(SigClusters$sigmat)[.y], sim = .x),
+    .id = "grp_sig"
+  )
+  sim_sig_to_grp_mean$grp_sig <- paste0("Sig", sim_sig_to_grp_mean$grp_sig)
+
+  return(
+    list(
+      grp_sigs = grp_sigs,
+      sim_sig_to_grp_mean = sim_sig_to_grp_mean,
+      sig_map = sig_map
+    )
+  )
 }
 
 #' @param obj a `ExtractionResult` object from [bp_extract_signatures()].
@@ -795,7 +881,6 @@ bp_show_survey2 <- function(obj,
     left_shape = left_shape, right_shape = right_shape,
     shape_size = shape_size, highlight = highlight
   )
-
 }
 
 #' @rdname bp
@@ -861,6 +946,7 @@ bp_show_survey <- function(obj,
       type = cn[.data$type],
       type = factor(.data$type, levels = cn)
     )
+    #dplyr::filter(!type %in% c("similarity", "distance"))
 
   if (add_score) {
     p <- ggplot(plot_df, aes_string(x = "sn", y = "measure")) +
@@ -905,9 +991,12 @@ bp_show_survey <- function(obj,
 #' @param sample_class a named string vector whose names are sample names
 #' and values are class labels (i.e. cancer subtype). If it is `NULL` (the default),
 #' treat all samples as one group.
-#' @param method one of 'bt' (use bootstrap exposure median) or
-#' 'stepwise' (stepwise reduce and update signatures then do signature fitting
-#' with last signature sets).
+#' @param method one of 'bt' (use bootstrap exposure median, from reference #2,
+#' **the most recommended way in my personal view**) or stepwise'
+#' (stepwise reduce and update signatures then do signature fitting
+#' with last signature sets, from reference #2, the result tends to assign
+#' the contribution of removed signatures to the remaining signatures,
+#' **maybe I misunderstand the paper method? PAY ATTENTION**).
 #' @param bt_use_prop this parameter is only used for `bt` method to reset
 #' low contributing signature activity (relative activity `<0.01`). If `TRUE`,
 #' use empirical P value calculation way (i.e. proportion, used by reference `#2`),
@@ -1042,7 +1131,8 @@ bp_attribute_activity <- function(input,
           .progress = TRUE,
           .options = furrr::furrr_options(
             seed = TRUE,
-            stdout = FALSE)
+            stdout = FALSE
+          )
         )
       )
     } else {
@@ -1074,7 +1164,8 @@ bp_attribute_activity <- function(input,
           .progress = TRUE,
           .options = furrr::furrr_options(
             seed = TRUE,
-            stdout = FALSE)
+            stdout = FALSE
+          )
         )
       )
     } else {
@@ -1208,6 +1299,10 @@ env_install <- function(use_conda, py_path, pkg, pkg_version) {
     print(reticulate::py_config())
   }
 
+  if (!reticulate::py_module_available("torch")) {
+    message("torch not found, try installing it...")
+    reticulate::py_install("torch==1.5.1", pip = TRUE, pip_options = "-f https://download.pytorch.org/whl/torch_stable.html")
+  }
   if (!reticulate::py_module_available(pkg)) {
     message("Python module ", pkg, " not found, try installing it...")
     reticulate::py_install(paste0(pkg, "==", pkg_version), pip = TRUE)

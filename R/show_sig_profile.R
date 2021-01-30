@@ -13,6 +13,7 @@
 #' 'DBS', 'ID' and 'RS' (genome rearrangement signature).
 #' @param method method for copy number feature classification in [sig_tally],
 #' can be one of "Macintyre" ("M"), "Wang" ("W").
+#' @param by_context for specific use.
 #' @param normalize one of 'row', 'column', 'raw' and "feature", for row normalization (signature),
 #' column normalization (component), raw data, row normalization by feature, respectively.
 #' Of note, 'feature' only works when the mode is 'copynumber'.
@@ -52,7 +53,7 @@
 #' @param y_expand y expand height for plotting params of copy number signatures.
 #' @param digits digits for plotting params of copy number signatures.
 #' @param font_scale a number used to set font scale.
-#' @param sig_names set name of signatures, can be a character vector.
+#' @param sig_names subset signatures or set name of signatures, can be a character vector.
 #' Default is `NULL`, prefix 'Sig' plus number is used.
 #' @param sig_orders set order of signatures, can be a character vector.
 #' Default is `NULL`, the signatures are ordered by alphabetical order.
@@ -134,12 +135,13 @@
 show_sig_profile <- function(Signature,
                              mode = c("SBS", "copynumber", "DBS", "ID", "RS"),
                              method = "Wang",
+                             by_context = FALSE,
                              normalize = c("row", "column", "raw", "feature"),
                              y_tr = NULL,
                              filters = NULL,
                              feature_setting = sigminer::CN.features,
                              style = c("default", "cosmic"),
-                             palette = use_color_style(style, mode, method),
+                             palette = use_color_style(style, ifelse(by_context, "SBS", mode), method),
                              set_gradient_color = FALSE,
                              free_space = "free_x",
                              rm_panel_border = style == "cosmic",
@@ -179,7 +181,10 @@ show_sig_profile <- function(Signature,
   }
 
   mode <- match.arg(mode)
-  method <- match.arg(method, choices = c("Macintyre", "M", "Wang", "W", "Tao & Wang", "T", "X"))
+  method <- match.arg(
+    method,
+    choices = c("Macintyre", "M", "Wang", "W", "Tao & Wang", "T", "X", "S")
+  )
   normalize <- match.arg(normalize)
   style <- match.arg(style)
 
@@ -203,6 +208,7 @@ show_sig_profile <- function(Signature,
         grepl(y, x)
       }))
     }), ]
+    if (nrow(Sig) < 1) stop("Bad filters, no component kept!")
   }
 
   ## Check if it has transcription labels
@@ -280,40 +286,129 @@ show_sig_profile <- function(Signature,
         base = factor(.data$base, levels = f_orders),
         class = factor(class, levels = colnames(Sig))
       )
+    } else if (startsWith(method, "S")) {
+      if (!nrow(mat) %in% c(40, 48)) {
+        send_stop("Data for 'S' method should have 40 or 48 components!")
+      }
+      mat <- mat %>%
+        tidyr::separate("context",
+          into = c("cn", "loh", "size"),
+          remove = FALSE, sep = ":"
+        ) %>%
+        dplyr::mutate(
+          base = .data$loh,
+          context = paste(.data$cn, .data$size, sep = ":"),
+          size = factor(
+            .data$size,
+            levels = c(
+              "0-10Kb",
+              "0-100Kb",
+              "10Kb-100Kb",
+              "100Kb-1Mb",
+              "1Mb-10Mb",
+              "10Mb-40Mb",
+              ">1Mb",
+              ">10Mb",
+              ">40Mb"
+            )
+          )
+        ) %>%
+        dplyr::arrange(.data$cn, .data$size)
+      # context_lvls <- vector_to_combination(mat$cn, ":", mat$size)
+
+      mat <- tidyr::gather(
+        mat %>% dplyr::select(-c("cn", "loh", "size")),
+        class, signature, -c("context", "base")
+      )
+
+      mat <- dplyr::mutate(
+        mat,
+        context = factor(
+          .data$context,
+          levels = unique(.data$context)
+        ),
+        base = factor(.data$base, c("homdel", "LOH", "het")),
+        class = factor(class, levels = colnames(Sig))
+      )
     } else {
       ## Ziyu Tao & Tao Wu & Wang
       if (any(nchar(mat$context) > 14)) {
         send_stop("Wrong 'method' option or unsupported components.")
       }
-      mat$base <- sub("^([A-Z]:[A-Z]{2}):[0-9]-?[0-9]?\\+?(LOH)?:[A-Z0-9]{2,3}$", "\\1", mat$context)
-      mat$context <- sub("^[A-Z]:[A-Z]{2}:([0-9]-?[0-9]?\\+?(LOH)?:[A-Z0-9]{2,3}$)", "\\1", mat$context)
-      mat <- tidyr::gather(mat, class, signature, -c("context", "base"))
 
+      if (!by_context) {
+        mat$base <- sub("^([A-Z]:[A-Z]{2}):[0-9]-?[0-9]?\\+?(LOH)?:[A-Z0-9]{2,3}$", "\\1", mat$context)
+        mat$context <- sub("^[A-Z]:[A-Z]{2}:([0-9]-?[0-9]?\\+?(LOH)?:[A-Z0-9]{2,3}$)", "\\1", mat$context)
+        mat <- tidyr::gather(mat, class, signature, -c("context", "base"))
 
-      len_base <- length(unique(mat$base))
-      if (len_base == 12) {
-        palette <- palette[c(2:4, 6:8, 10:12, 14:16)]
+        len_base <- length(unique(mat$base))
+        if (len_base == 12) {
+          palette <- palette[c(2:4, 6:8, 10:12, 14:16)]
+        }
+
+        mat <- dplyr::mutate(mat,
+          context = factor(.data$context),
+          base = factor(.data$base, levels = if (len_base == 12) {
+            c(
+              "S:HH", "S:LD", "S:LL",
+              "M:HH", "M:LD", "M:LL",
+              "L:HH", "L:LD", "L:LL",
+              "E:HH", "E:LD", "E:LL"
+            )
+          } else {
+            c(
+              "S:HH", "S:HL", "S:LH", "S:LL",
+              "M:HH", "M:HL", "M:LH", "M:LL",
+              "L:HH", "L:HL", "L:LH", "L:LL",
+              "E:HH", "E:HL", "E:LH", "E:LL"
+            )
+          }),
+          class = factor(class, levels = colnames(Sig))
+        )
+      } else {
+        mat <- mat %>%
+          tidyr::separate("context", into = c("segLen", "contextShape", "segVal", "contextCP"), sep = ":") %>%
+          dplyr::mutate(
+            segLen = dplyr::case_when(
+              .data$segLen == "S" ~ "<50Kb",
+              .data$segLen == "M" ~ "50-500Kb",
+              .data$segLen == "L" ~ "500Kb-5Mb",
+              .data$segLen == "E" ~ ">5Mb"
+            ),
+            context = paste0(.data$segVal, ":", .data$segLen),
+            base = paste0(.data$contextShape, ":", .data$contextCP),
+            segLen = factor(
+              .data$segLen,
+              levels = c(
+                "<50Kb",
+                "50-500Kb",
+                "500Kb-5Mb",
+                ">5Mb"
+              )
+            )
+          ) %>%
+          dplyr::arrange(.data$segVal, .data$segLen) %>%
+          dplyr::select(-c("segLen", "contextShape", "segVal", "contextCP"))
+
+        mat <- tidyr::gather(mat, class, signature, -c("context", "base"))
+
+        len_base <- length(unique(mat$base))
+
+        if (len_base != 6) {
+          stop("Your input is not supported.")
+        }
+
+        mat <- dplyr::mutate(mat,
+          context = factor(.data$context, unique(.data$context)),
+          base = factor(.data$base,
+            levels = c(
+              "LL:AA", "HH:AA", "LD:AA",
+              "LL:BB", "HH:BB", "LD:BB"
+            )
+          ),
+          class = factor(class, levels = colnames(Sig))
+        )
       }
-
-      mat <- dplyr::mutate(mat,
-        context = factor(.data$context),
-        base = factor(.data$base, levels = if (len_base == 12) {
-          c(
-            "S:HH", "S:LD", "S:LL",
-            "M:HH", "M:LD", "M:LL",
-            "L:HH", "L:LD", "L:LL",
-            "E:HH", "E:LD", "E:LL"
-          )
-        } else {
-          c(
-            "S:HH", "S:HL", "S:LH", "S:LL",
-            "M:HH", "M:HL", "M:LH", "M:LL",
-            "L:HH", "L:HL", "L:LH", "L:LL",
-            "E:HH", "E:HL", "E:LH", "E:LL"
-          )
-        }),
-        class = factor(class, levels = colnames(Sig))
-      )
     }
   } else if (mode == "SBS") {
     mat$base <- sub("[ACGT]\\[(.*)\\][ACGT]", "\\1", mat$context)
@@ -432,12 +527,12 @@ show_sig_profile <- function(Signature,
     mat %>%
       dplyr::mutate(
         is_clustered = startsWith(.data$context, "clustered"),
-        type = sub("(non-)?clustered_([^_]+)_?.*", "\\2", .data$context),
+        type = sub("(non-)?clustered:([^:]+):?.*", "\\2", .data$context),
         base = paste(ifelse(.data$is_clustered, "C", "N"), .data$type, sep = "-"),
         base = sub("-trans", "", .data$base)
       ) %>%
       dplyr::select(-c("is_clustered", "type")) -> mat
-    mat$context <- sub("^.*_([^_]+)$", "\\1", mat$context)
+    mat$context <- sub("^.*:([^:]+)$", "\\1", mat$context)
 
     mat <- tidyr::gather(mat, class, signature, -c("context", "base"))
 
@@ -479,11 +574,20 @@ show_sig_profile <- function(Signature,
 
   # >>>>>>> Set signature name and order
   if (!is.null(sig_names)) {
-    if (length(sig_names) != length(unique(mat[["class"]]))) {
-      stop("The length of input signature names is not equal to signature number!")
+    uq_names <- unique(mat[["class"]])
+    if (length(sig_names) != length(uq_names)) {
+      if (all(sig_names %in% uq_names)) {
+        # Filter signatures
+        message("Only plot selected signatures.")
+        mat <- mat %>% dplyr::filter(.data$class %in% sig_names)
+      } else {
+        stop("The length of input signature names is not equal to signature number!")
+      }
+    } else {
+      # Change signature names
+      names(sig_names) <- paste0("Sig_", seq_along(sig_names))
+      mat[["class"]] <- sig_names[mat[["class"]]]
     }
-    names(sig_names) <- paste0("Sig_", seq_along(sig_names))
-    mat[["class"]] <- sig_names[mat[["class"]]]
   }
 
   if (!is.null(sig_orders) & !is.numeric(sig_orders)) {

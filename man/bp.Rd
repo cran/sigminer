@@ -5,6 +5,7 @@
 \alias{bp_extract_signatures}
 \alias{bp_extract_signatures_iter}
 \alias{bp_cluster_iter_list}
+\alias{bp_get_clustered_sigs}
 \alias{bp_get_sig_obj}
 \alias{bp_get_stats}
 \alias{bp_get_rank_score}
@@ -55,7 +56,9 @@ bp_extract_signatures_iter(
   py_path = "/Users/wsx/anaconda3/bin/python"
 )
 
-bp_cluster_iter_list(x, include_final_iteration = TRUE)
+bp_cluster_iter_list(x, k = NULL, include_final_iteration = TRUE)
+
+bp_get_clustered_sigs(SigClusters, cluster_label)
 
 bp_get_sig_obj(obj, signum = NULL)
 
@@ -154,9 +157,16 @@ the extraction procedure 10 times.}
 \item{x}{result from \code{\link[=bp_extract_signatures_iter]{bp_extract_signatures_iter()}} or a list of
 \code{Signature} objects.}
 
+\item{k}{an integer sequence specifying the cluster number to get silhouette.}
+
 \item{include_final_iteration}{if \code{FALSE}, exclude final iteration result
 from clustering for input from \code{\link[=bp_extract_signatures_iter]{bp_extract_signatures_iter()}}, not applied
 if input is a list of \code{Signature} objects.}
+
+\item{SigClusters}{result from \code{\link[=bp_cluster_iter_list]{bp_cluster_iter_list()}}.}
+
+\item{cluster_label}{cluster labels for a specified cluster number, obtain it
+from \code{SigClusters$sil_df}.}
 
 \item{obj}{a \code{ExtractionResult} object from \code{\link[=bp_extract_signatures]{bp_extract_signatures()}}.}
 
@@ -197,9 +207,12 @@ of plot facet.}
 and values are class labels (i.e. cancer subtype). If it is \code{NULL} (the default),
 treat all samples as one group.}
 
-\item{method}{one of 'bt' (use bootstrap exposure median) or
-'stepwise' (stepwise reduce and update signatures then do signature fitting
-with last signature sets).}
+\item{method}{one of 'bt' (use bootstrap exposure median, from reference #2,
+\strong{the most recommended way in my personal view}) or stepwise'
+(stepwise reduce and update signatures then do signature fitting
+with last signature sets, from reference #2, the result tends to assign
+the contribution of removed signatures to the remaining signatures,
+\strong{maybe I misunderstand the paper method? PAY ATTENTION}).}
 
 \item{bt_use_prop}{this parameter is only used for \code{bt} method to reset
 low contributing signature activity (relative activity \verb{<0.01}). If \code{TRUE},
@@ -222,9 +235,8 @@ in tumor samples. They are listed in order to use.
 \item \code{bp_extract_signatures()} for extracting signatures.
 \item \code{bp_show_survey()} for showing measures change under different
 signature numbers to help user select optimal signature number.
-At default, an aggregated score (named score) is generated from 5 measures to
-suggest the best solution. See section "Measure Explanation in Survey plot"
-for more explanation.
+At default, an aggregated score (named score) is generated to
+suggest the best solution.
 \item \code{bp_show_survey2()} for showing simplified signature number survey like
 \code{\link[=show_sig_number_survey]{show_sig_number_survey()}}.
 \item \code{bp_get_sig_obj()} for get a (list of) \code{Signature} object which is common
@@ -235,9 +247,11 @@ You can also use \link{sig_extract} to get optimal NMF result from multiple NMF 
 Besides, you can use \link{sig_fit} to quantify exposures based on signatures extracted
 from \code{bp_extract_signatures()}.
 \item \code{bp_extract_signatures_iter()} for extracting signature in a iteration way.
-\item \code{bp_cluster_iter_list()} for clustering iterated signatures to help collapse
+\item \code{bp_cluster_iter_list()} for clustering (\code{hclust} with average linkage)
+iterated signatures to help collapse
 multiple signatures into one. The result cluster can be visualized by
 \code{plot()} or \code{factoextra::fviz_dend()}.
+\item \code{bp_get_clustered_sigs()} for getting clustered (grouped) mean signatures from signature clusters.
 \item Extra: \code{bp_get_stats}() for obtaining stats for signatures and samples of a solution.
 These stats are aggregated (averaged) as the stats for a solution
 (specific signature number).
@@ -255,13 +269,13 @@ very clear to see and also visualize like other approaches provided by \strong{s
 \section{Measure Explanation in Survey Plot}{
 
 The survey plot provides a pretty good way to facilitate the signature number
-selection. A \code{score} measure is calculated as the weighted mean of 5 important
+selection. A \code{score} measure is calculated as the weighted mean of selected
 measures and visualized as the first sub-plot. The optimal number is highlighted
-with red color dot and the best values for 5 measures to be weighted are also
+with red color dot and the best values for each measures are also
 highlighted with orange color dots. The detail of 6 measures shown in plot are
 explained as below.
 \itemize{
-\item \code{score} - an aggregated score based on rank scores from 5 measures below.
+\item \code{score} - an aggregated score based on rank scores from selected measures below.
 The higher, the better. When two signature numbers have the same score,
 the larger signature number is preferred (this is a rare situation, you
 have to double check other measures).
