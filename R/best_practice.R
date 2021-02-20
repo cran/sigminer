@@ -891,7 +891,7 @@ bp_show_survey2 <- function(obj,
 #' @param fixed_ratio if `TRUE` (default), make the x/y axis ratio fixed.
 #' @export
 bp_show_survey <- function(obj,
-                           add_score = TRUE,
+                           add_score = FALSE,
                            scales = c("free_y", "free"),
                            fixed_ratio = TRUE) {
   assert_class(obj, "ExtractionResult")
@@ -946,7 +946,11 @@ bp_show_survey <- function(obj,
       type = cn[.data$type],
       type = factor(.data$type, levels = cn)
     )
-    #dplyr::filter(!type %in% c("similarity", "distance"))
+
+  if (!add_score) {
+    plot_df <- plot_df %>%
+      dplyr::filter(!type %in% c("silhouette", "error"))
+  }
 
   if (add_score) {
     p <- ggplot(plot_df, aes_string(x = "sn", y = "measure")) +
@@ -977,7 +981,7 @@ bp_show_survey <- function(obj,
   }
 
   p <- p +
-    facet_wrap(~type, nrow = 2, scales = scales) +
+    facet_wrap(~type, nrow = if (length(unique(plot_df$type)) > 3) 2 else 1, scales = scales) +
     cowplot::theme_cowplot() +
     labs(x = NULL, y = NULL)
   if (fixed_ratio) {
@@ -1299,9 +1303,15 @@ env_install <- function(use_conda, py_path, pkg, pkg_version) {
     print(reticulate::py_config())
   }
 
-  if (!reticulate::py_module_available("torch")) {
+  if (pkg == "SigProfilerExtractor" & !reticulate::py_module_available("torch")) {
     message("torch not found, try installing it...")
-    reticulate::py_install("torch==1.5.1", pip = TRUE, pip_options = "-f https://download.pytorch.org/whl/torch_stable.html")
+    tryCatch(
+      reticulate::py_install("torch==1.5.1", pip = TRUE),
+      error = function(e) {
+        message("Cannot install torch just with pip, try again with source from https://download.pytorch.org/whl/torch_stable.html")
+        reticulate::py_install("torch==1.5.1", pip = TRUE, pip_options = "-f https://download.pytorch.org/whl/torch_stable.html")
+      }
+    )
   }
   if (!reticulate::py_module_available(pkg)) {
     message("Python module ", pkg, " not found, try installing it...")

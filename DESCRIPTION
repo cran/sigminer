@@ -1,7 +1,7 @@
 Package: sigminer
 Title: Extract, Analyze and Visualize Mutational Signatures for Genomic
         Variations
-Version: 1.2.4
+Version: 1.2.5
 Authors@R: 
     c(person(given = "Shixiang",
              family = "Wang",
@@ -56,7 +56,7 @@ Suggests: Biobase, Biostrings, BSgenome, BSgenome.Hsapiens.UCSC.hg19,
         ggplotify, ggrepel, IRanges, knitr, lpSolve, markdown,
         matrixStats, nnls, patchwork, pheatmap, quadprog, R.utils,
         RColorBrewer, reticulate, rmarkdown, roxygen2, scales,
-        synchronicity, testthat, tibble, UCSCXenaTools
+        synchronicity, testthat, tibble, UCSCXenaTools, copynumber
 LinkingTo: Rcpp
 VignetteBuilder: knitr
 biocViews:
@@ -64,7 +64,7 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: yes
-Packaged: 2021-01-30 08:12:20 UTC; wsx
+Packaged: 2021-02-19 14:51:50 UTC; wsx
 Author: Shixiang Wang [aut, cre] (<https://orcid.org/0000-0001-9855-7357>),
   Ziyu Tao [aut] (<https://orcid.org/0000-0003-3272-1227>),
   Huimin Li [aut] (<https://orcid.org/0000-0003-1683-9057>),
@@ -74,4 +74,4 @@ Author: Shixiang Wang [aut, cre] (<https://orcid.org/0000-0001-9855-7357>),
   Anand Mayakonda [ctb]
 Maintainer: Shixiang Wang <w_shixiang@163.com>
 Repository: CRAN
-Date/Publication: 2021-01-31 00:30:02 UTC
+Date/Publication: 2021-02-20 01:10:09 UTC
