@@ -31,8 +31,10 @@ get_sig_cancer_type_index <- function(
                                       source = c("PCAWG", "TCGA", "nonPCAWG"),
                                       keyword = NULL) {
   if (!is.null(keyword)) {
-    df1 <- readRDS(system.file("extdata", "cosmic2_record_by_cancer.rds", package = "sigminer"))
-    df2 <- readRDS(system.file("extdata", "signature_record_by_cancer.rds", package = "sigminer"))
+    df1_file <- system.file("extdata", "cosmic2_record_by_cancer.rds", package = "sigminer", mustWork = TRUE)
+    df1 <- readRDS(df1_file)
+    df2_file <- system.file("extdata", "signature_record_by_cancer.rds", package = "sigminer", mustWork = TRUE)
+    df2 <- readRDS(df2_file)
     colnames(df1)[1] <- "name"
     colnames(df2)[1] <- "name"
 
@@ -74,7 +76,8 @@ get_sig_cancer_type_index <- function(
   data_source <- match.arg(source)
 
   if (sig_type == "legacy") {
-    df <- readRDS(system.file("extdata", "cosmic2_record_by_cancer.rds", package = "sigminer"))
+    df_file <- system.file("extdata", "cosmic2_record_by_cancer.rds", package = "sigminer", mustWork = TRUE)
+    df <- readRDS(df_file)
 
     if (requireNamespace("knitr", quietly = TRUE)) {
       print(knitr::kable(df))
@@ -87,7 +90,8 @@ get_sig_cancer_type_index <- function(
       res[[i]] <- split_seq(df[["signature type"]][df[["full name"]] == i])
     }
   } else {
-    df <- readRDS(system.file("extdata", "signature_record_by_cancer.rds", package = "sigminer"))
+    df_file <- system.file("extdata", "signature_record_by_cancer.rds", package = "sigminer", mustWork = TRUE)
+    df <- readRDS(df_file)
     sel_cols <- c("cancer type", paste(sig_type, "list"))
     df <- df %>%
       dplyr::filter(.data$source == data_source & .data$scale == seq_type) %>%

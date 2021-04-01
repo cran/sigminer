@@ -4,14 +4,25 @@ query_remote_data <- function(x) {
   x_dest <- file.path(system.file("extdata", package = "sigminer"), x)
   message("Downloading ", x_url, " to ", x_dest)
   tryCatch(
-    download.file(
-      url = x_url,
-      destfile = x_dest
-    ),
+    {
+      download.file(
+        url = x_url,
+        destfile = x_dest
+      )
+      TRUE
+    },
     error = function(e) {
-      stop("Failed downloading the data.")
+      warning("Failed downloading the data.", immediate. = TRUE)
+      FALSE
     }
   )
+}
+
+# Normalize data to specified range
+norm2rg <- function(x, rg) {
+  stopifnot(length(rg) == 2)
+  k <- diff(rg) / diff(range(x))
+  rg[1] + k * (x - min(x))
 }
 
 # Check data may cause NMF error

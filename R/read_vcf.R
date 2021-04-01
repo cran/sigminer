@@ -1,5 +1,8 @@
 #' Read VCF Files as MAF Object
 #'
+#' MAF file is more recommended. In this function, we will mimic
+#' the MAF object from the key `c(1, 2, 4, 5, 7)` columns of VCF file.
+#'
 #' @param vcfs VCF file paths.
 #' @param samples sample names for VCF files.
 #' @param genome_build genome build version like "hg19".
@@ -13,15 +16,21 @@
 #' vcfs <- list.files(system.file("extdata", package = "sigminer"), "*.vcf", full.names = TRUE)
 #' \donttest{
 #' maf <- read_vcf(vcfs)
-#' maf <- read_vcf(vcfs, keep_only_pass = FALSE)
+#' maf <- read_vcf(vcfs, keep_only_pass = TRUE)
 #' }
 #' @testexamples
 #' expect_is(maf, "MAF")
-read_vcf <- function(vcfs, samples = NULL, genome_build = c("hg19", "hg38", "mm10"), keep_only_pass = TRUE, verbose = TRUE) {
+read_vcf <- function(vcfs, samples = NULL, genome_build = c("hg19", "hg38", "mm10"), keep_only_pass = FALSE, verbose = TRUE) {
   genome_build <- match.arg(genome_build)
   vcfs_name <- vcfs
   if (verbose) message("Reading file(s): ", paste(vcfs, collapse = ", "))
-  vcfs <- purrr::map(vcfs, ~ data.table::fread(., select = c(1, 2, 4, 5, 7)))
+  vcfs <- purrr::map(vcfs, ~ tryCatch(
+    data.table::fread(., select = c(1, 2, 4, 5, 7), skip = "#CHROM"),
+    error = function(e) {
+      message("It seems ", ., " has no normal VCF header, try parsing without header.")
+      data.table::fread(., select = c(1, 2, 4, 5, 7))
+    }
+  ))
 
   if (is.null(samples)) {
     names(vcfs) <- file_name(vcfs_name, must_chop = ".vcf")
@@ -70,12 +79,18 @@ read_vcf <- function(vcfs, samples = NULL, genome_build = c("hg19", "hg38", "mm1
     genome_build,
     mm10 = file.path(
       system.file("extdata", package = "sigminer"),
-      "mouse_mm10_gene_info.rds"),
+      "mouse_mm10_gene_info.rds"
+    ),
     file.path(
       system.file("extdata", package = "sigminer"),
       paste0("human_", genome_build, "_gene_info.rds")
-    ))
-  if (!file.exists(gene_file)) query_remote_data(basename(gene_file))
+    )
+  )
+  ok <- TRUE
+  if (!file.exists(gene_file)) ok <- query_remote_data(basename(gene_file))
+  if (!ok) {
+    return(invisible(NULL))
+  }
   gene_dt <- readRDS(gene_file)
 
   if (verbose) message("Annotating mutations to first matched gene based on database ", gene_file, "...")

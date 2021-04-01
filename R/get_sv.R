@@ -3,13 +3,23 @@
 #' Read Structural Variation Data as RS object
 #'
 #' @param input a `data.frame` or a file with the following columns:
-#' "sample", "chr1", "start1", "end1", "chr2", "start2", "end2", "strand1", "strand2", "svclass"
+#' "sample", "chr1", "start1", "end1", "chr2", "start2", "end2", "strand1", "strand2", "svclass".
+#' NOTE: If column "svclass" already exists in input, "strand1" and "strand2" are optional.
+#' If "svclass" is not provided, `read_sv_as_rs()` will compute it by
+#' "strand1","strand2"(strand1/strand2),"chr1" and "chr2":
+#' - translocation, if mates are on different chromosomes.
+#' - inversion (+/-) and (-/+), if mates on the same chromosome.
+#' - deletion (+/+), if mates on the same chromosome.
+#' - tandem-duplication (-/-), if mates on the same chromosome.
 #' @return a `list`
 #' @export
 #'
 #' @examples
 #' sv <- readRDS(system.file("extdata", "toy_sv.rds", package = "sigminer", mustWork = TRUE))
 #' rs <- read_sv_as_rs(sv)
+#' # svclass is optional
+#' rs2 <- read_sv_as_rs(sv[, setdiff(colnames(sv), "svclass")])
+#' identical(rs, rs2)
 #' \donttest{
 #' tally_rs <- sig_tally(rs)
 #' }
@@ -30,60 +40,79 @@ read_sv_as_rs <- function(input) {
   necessary.fields <- c(
     "sample",
     "chr1", "start1", "end1",
-    "chr2", "start2", "end2",
-    "strand1", "strand2",
-    "svclass"
+    "chr2", "start2", "end2"
   )
-
   colnames(input) <- tolower(colnames(input))
+
   idx <- necessary.fields %in% colnames(input)
   if (!all(idx)) {
     stop(
-      "Missing required fields from SV: ",
-      paste(missing.fileds[!idx], collapse = "")
+      "Missing required columns from input: ",
+      paste(necessary.fields[!idx], collapse = ", ")
     )
   }
 
-  # message missing fields
-  missing.fileds <- necessary.fields[!necessary.fields %in% colnames(input)] # check if any of them are missing
-
-  if (length(missing.fileds) > 0) {
-    missing.fileds <- paste(missing.fileds[1], sep = ",", collapse = ", ")
-    # stop if any of required.fields are missing
+  # check svclass present or not.
+  # If not, generate it.
+  if (!"svclass" %in% colnames(input)) {
+    if (all(c("strand1", "strand2") %in% colnames(input))) {
+      input <- get_svclass(input)
+    } else {
+      stop(
+        "Can't computate because of missing additional columns: 'strand1' and 'strand2'"
+      )
+    }
   }
 
   # drop unnecessary fields
-  input <- subset(input, select = necessary.fields)
+  input <- subset(input, select = c(necessary.fields, "svclass"))
 
   # chromosome "chr+number" to "number"
-  input$chr1 <- ifelse(grepl("chr", input$chr1), sub("chr", "", input$chr1), input$chr1)
-  input$chr2 <- ifelse(grepl("chr", input$chr2), sub("chr", "", input$chr2), input$chr2)
+  input$chr1 <- sub("chr", "", input$chr1, ignore.case = TRUE)
+  input$chr2 <- sub("chr", "", input$chr2, ignore.case = TRUE)
 
   class(input) <- c("RS", class(input))
   message("succesfully read RS!")
   return(input)
 }
 
-# split by sample and collect in a list : svlist --------------------------
+# split by sample and collect in a list: svlist --------------------------
 get_svlist <- function(data) {
   index <- seq(1, nrow(data))
   data$Index <- index
   res <- split(data, by = "sample")
 }
 
+# get svclass
+get_svclass <- function(data) {
+  data %>% dplyr::mutate(
+    svclass = dplyr::case_when(
+      .data$chr1 != .data$chr2 ~ "translocation",
+      .data$strand1 != .data$strand2 ~ "inversion",
+      .data$strand1 == "-" & .data$strand2 == "-" ~ "tandem-duplication",
+      .data$strand1 == "+" & .data$strand2 == "+" ~ "deletion"
+    )
+  )
+}
+
+
 # get size
-getRearrSize_v1 <- function(sv_profiles) {
+getRearrSize <- function(sv_profiles) {
   rearrsize <- purrr::map_df(sv_profiles, function(x) {
-    if (x$svclass == "translocation") x$rearrsize <- NA
-    length <- x$end2 - x$start1
-    if (length < 1000) x$rearrsize <- "<1Kb"
-    if (length >= 1000 & length < 10000) x$rearrsize <- "1-10Kb"
-    if (length >= 10000 & length < 100000) x$rearrsize <- "10-100Kb"
-    if (length >= 100000 & length < 1000000) x$rearrsize <- "100Kb-1Mb"
-    if (length >= 1000000 & length <= 10000000) x$rearrsize <- "1Mb-10Mb"
-    if (length > 10000000) x$rearrsize <- ">10Mb"
-    x[, c("sample", "rearrsize", "Index"), with = FALSE]
-    # x[, c("sample", "rearrsize")]
+    x %>%
+      dplyr::mutate(
+        length = x$end2 - x$start1,
+        rearrsize = dplyr::case_when(
+          .data$svclass == "translocation" ~ NA_character_,
+          .data$length < 1000 ~ "<1Kb",
+          .data$length >= 1000 & .data$length < 10000 ~ "1-10Kb",
+          .data$length >= 10000 & .data$length < 100000 ~ "10-100Kb",
+          .data$length >= 100000 & .data$length < 1000000 ~ "100Kb-1Mb",
+          .data$length >= 1000000 & .data$length <= 10000000 ~ "1Mb-10Mb",
+          .data$length > 10000000 ~ ">10Mb"
+        )
+      ) %>%
+      dplyr::select_at(c("sample", "rearrsize", "Index"))
   })
   colnames(rearrsize) <- c("sample", "value", "Index")
   rearrsize <- rearrsize %>%
@@ -117,14 +146,14 @@ getDists <- function(chrom1, pos1, chrom2, pos2, doPCF = FALSE) {
     if (!doPCF) {
       return(forCN[, 3])
     }
-    return(list(info = forCN, seg = suppressMessages(copynumber::pcf(forCN, gamma = 25, kmin = 10))))
+    return(list(info = forCN, seg = copynumber::pcf(forCN, gamma = 25, kmin = 10)))
   }, simplify = FALSE)
   return(dists)
 }
 
 # get clustered -----------------------------------------------------------
-getClustered_v1 <- function(sv_profiles, threshold = NULL) {
-  # threshold = NULL
+
+getClustered <- function(sv_profiles, threshold = NULL) {
   # each list each row apply function
   clustered <- purrr::map(sv_profiles, function(x) {
     # get pos and chrom
@@ -132,16 +161,17 @@ getClustered_v1 <- function(sv_profiles, threshold = NULL) {
     pos2 <- x$start2
     chrom1 <- x$chr1
     chrom2 <- x$chr2
+
     # get segments per chromosome
     dists <- getDists(chrom1, pos1, chrom2, pos2, doPCF = TRUE)
     if (is.null(threshold)) threshold <- 0.1 * mean(unlist(sapply(dists, FUN = function(x) x$info[, 3])), na.rm = TRUE)
+
     # which segments are below threshold
     regions <- do.call(rbind, sapply(dists, FUN = function(x) {
       x$seg[which(x$seg$mean < threshold), ]
     }, simplify = FALSE))
     if (nrow(regions) == 0) {
       clustered <- rep("non-clustered", length(chrom1))
-      # return(rep("unclustered",length(chrom1)))
     } else {
       # which rearrangements are in clustered regions
       regionGR <- as(paste0(regions$chrom, ":", regions$start.pos, "-", regions$end.pos), "GRanges")
@@ -155,23 +185,20 @@ getClustered_v1 <- function(sv_profiles, threshold = NULL) {
     x[, c("sample", "clustered", "Index"), with = FALSE]
   })
 
-  # clustered_dt <- plyr::ldply(clustered, data.frame, .id = NULL)
-  clustered_dt <- do.call(rbind, lapply(clustered, data.frame)) %>%
-    .[, c("sample", "clustered", "Index")] %>%
-    data.table::as.data.table()
+
+  clustered_dt <- data.table::rbindlist(clustered)
   colnames(clustered_dt) <- c("sample", "value", "Index")
   clustered_dt[order(clustered_dt$Index)]
 }
 
 
 # get type ----------------------------------------------------------------
-getType_v1 <- function(sv_profiles) {
+getType <- function(sv_profiles) {
+  type_map <- c("del", "inv", "tds", "trans")
+  names(type_map) <- c("deletion", "inversion", "tandem-duplication", "translocation")
+
   type <- purrr::map_df(sv_profiles, function(x) {
-    # x <- sv_profiles$PD26851a[1]
-    if (x$svclass == "deletion") x$type <- "del"
-    if (x$svclass == "inversion") x$type <- "inv"
-    if (x$svclass == "tandem-duplication") x$type <- "tds"
-    if (x$svclass == "translocation") x$type <- "trans"
+    x$type <- as.character(type_map[x$svclass])
     x[, c("sample", "type", "Index"), with = FALSE]
   })
   colnames(type) <- c("sample", "value", "Index")
@@ -191,16 +218,16 @@ get_features_sv <- function(sv_data) {
   .get_feature <- function(i) {
     if (i == "clustered") {
       print("Getting clustered info...")
-      zz <- getClustered_v1(sv_data)
+      zz <- getClustered(sv_data)
       zz
     }
     else if (i == "type") {
       print("Getting type of segment ...")
-      getType_v1(sv_data)
+      getType(sv_data)
     }
     else if (i == "size") {
       print("Getting distance of two rearrange segments ...")
-      getRearrSize_v1(sv_data)
+      getRearrSize(sv_data)
     }
   }
   res <- furrr::future_map(field, .get_feature,
@@ -211,20 +238,14 @@ get_features_sv <- function(sv_data) {
   res
 }
 
-
-# get cn component
-# input : cn_feature, output : get_component_sv
 get_components_sv <- function(CN_features) {
-  # CN_features = test_feature
   feature_names <- names(CN_features)
-  # 【pre】feature_names <- setdiff(names(CN_features), "LOH")
-
   purrr::map2(CN_features[feature_names], feature_names,
-    .f = call_component
+    .f = call_component_sv
   )
 }
 
-call_component <- function(f_dt, f_name) {
+call_component_sv <- function(f_dt, f_name) {
   f_dt <- data.table::copy(f_dt)
   if (f_name == "clustered") {
     f_dt$C_clustered <- factor(f_dt$value, levels = c("clustered", "non-clustered"))
@@ -239,8 +260,7 @@ call_component <- function(f_dt, f_name) {
   f_dt
 }
 
-
-# get sv matrix
+# get matrix -------------------------------------------------------
 get_matrix_sv <- function(CN_components, indices = NULL) {
   merged_dt <- purrr::reduce(CN_components, merge, by = c("sample", "Index"), all = TRUE)
   dt_mg <- merged_dt

@@ -6,7 +6,7 @@
 [![CRAN
 status](https://www.r-pkg.org/badges/version/sigminer)](https://cran.r-project.org/package=sigminer)
 [![lifecycle](https://img.shields.io/badge/lifecycle-stable-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html)
-![R-CMD-check](https://github.com/ShixiangWang/sigminer/workflows/R-CMD-check/badge.svg)
+[![R-CMD-check](https://github.com/ShixiangWang/sigminer/workflows/R-CMD-check/badge.svg)](https://github.com/ShixiangWang/sigminer/actions)
 [![Coverage
 status](https://codecov.io/gh/ShixiangWang/sigminer/branch/master/graph/badge.svg)](https://codecov.io/github/ShixiangWang/sigminer?branch=master)
 [![](https://cranlogs.r-pkg.org/badges/grand-total/sigminer?color=orange)](https://cran.r-project.org/package=sigminer)
@@ -57,8 +57,6 @@ For pipeline tool, please see its co-evolutionary CLI
     rearrangement signature).
 -   supports quantify exposure for one sample based on *known
     signatures*.
--   supports two methods for calling copy number signatures: one is from
-    Macintyre et al. 2018 and the other is created by our group.
 -   supports association and group analysis and visualization for
     signatures.
 -   supports two types of signature exposures: relative exposure
@@ -112,8 +110,7 @@ settings.
 You can install the stable release of **sigminer** from CRAN with:
 
 ``` r
-install.packages("sigminer", dependencies = TRUE)
-# Or
+install.packages("BiocManager")
 BiocManager::install("sigminer", dependencies = TRUE)
 ```
 
@@ -222,8 +219,6 @@ written permission after contacting Shixiang Wang
 <liuxs@shanghaitech.edu.cn>.
 
 MIT © 2019-Present Shixiang Wang, Xue-Song Liu
-
-MIT © 2018 Geoffrey Macintyre
 
 MIT © 2018 Anand Mayakonda
 
