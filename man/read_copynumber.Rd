@@ -18,7 +18,7 @@ read_copynumber(
   use_all = add_loh,
   min_segnum = 0L,
   max_copynumber = 20L,
-  genome_build = c("hg19", "hg38", "mm10"),
+  genome_build = c("hg19", "hg38", "mm10", "mm9"),
   genome_measure = c("called", "wg"),
   complement = FALSE,
   ...
@@ -65,7 +65,7 @@ and visualization functionality, but speed up reading data.}
 
 \item{max_copynumber}{bigger copy number within a sample will be reset to this value.}
 
-\item{genome_build}{genome build version, should be 'hg19', 'hg38' or 'mm10'.}
+\item{genome_build}{genome build version, should be 'hg19', 'hg38', 'mm9' or 'mm10'.}
 
 \item{genome_measure}{default is 'called', can be 'wg' or 'called'.
 Set 'called' will use called segments size to compute total size for CNA burden calculation,

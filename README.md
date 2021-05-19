@@ -14,9 +14,9 @@ status](https://codecov.io/gh/ShixiangWang/sigminer/branch/master/graph/badge.sv
 issues](https://img.shields.io/github/issues-closed/ShixiangWang/sigminer.svg)](https://github.com/ShixiangWang/sigminer/issues?q=is%3Aissue+is%3Aclosed)
 [![Lines Of
 Code](https://tokei.rs/b1/github/ShixiangWang/sigminer?category=code)](https://github.com/ShixiangWang/sigminer)
-[![HitCount](https://hits.dwyl.com/ShixiangWang/sigminer.svg)](https://hits.dwyl.com/ShixiangWang/sigminer/)
-[![install with
-bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](https://anaconda.org/bioconda/r-sigminer/)
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FShixiangWang%2Fsigminer&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
+![install with
+bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)
 
 ## Overview
 
@@ -153,14 +153,15 @@ following papers.
 
 ------------------------------------------------------------------------
 
--   ***Wang, Shixiang, et al. “Copy number signature analyses in
-    prostate cancer reveal distinct etiologies and clinical outcomes”
-    medRxiv (2020)***
-    <https://www.medrxiv.org/content/10.1101/2020.04.27.20082404v1>
+-   ***Wang S, Li H, Song M, Tao Z, Wu T, He Z, et al. (2021) Copy
+    number signature analysis tool and its application in prostate
+    cancer reveals distinct mutational processes and clinical outcomes.
+    PLoS Genet 17(5): e1009557.***
+    <https://doi.org/10.1371/journal.pgen.1009557>
 
 -   ***Shixiang Wang, Ziyu Tao, Tao Wu, Xue-Song Liu, Sigflow: An
     Automated And Comprehensive Pipeline For Cancer Genome Mutational
-    Signature Analysis, Bioinformatics, btaa895***,
+    Signature Analysis, Bioinformatics, btaa895***.
     <https://doi.org/10.1093/bioinformatics/btaa895>
 
 ------------------------------------------------------------------------
