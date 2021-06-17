@@ -1,7 +1,7 @@
-71294e729cd1de47567062873754d86a *DESCRIPTION
+fbbd2c91b8ad5af1bca192277456a056 *DESCRIPTION
 bce7cc972e1074ba19eb5baf90ac73f9 *LICENSE
 9db1ee76536519897b463a3c9682032e *NAMESPACE
-2ffc661f04578b8f61004a86e2659f72 *NEWS.md
+98328425af8ac3a23676549dd7fb08d5 *NEWS.md
 03c96fb9651ae3dcd92e85d5848dada3 *R/CN-mutex-classification-method.R
 6649933011f597e7eb4b04178e6d365c *R/RcppExports.R
 a021446c9255ce9a0473e96e59a7081c *R/add_h_arrow.R
@@ -45,7 +45,7 @@ b1ef4ac184d9f6c72eca5c7db49402a1 *R/helper_join_segments.R
 474823aec370774c42f5acc3504377d1 *R/helper_normalize_by_feature.R
 86946ad5f4fd0f1d8e1f3955fa5a9eed *R/helper_scale_nmf_matrix.R
 dd6aa03b11d5f642f4d06f72272a1bd5 *R/helper_sort_signature.R
-1004a0d54a67ea2b486edcc668fcb617 *R/output.R
+d69bf3128daff4f4ee703f2e51e4e3f2 *R/output.R
 8400efa4e7696f886ec0174050e4b07a *R/read_copynumber.R
 e0c8c385e94a7cf4b265a00fdfa68d29 *R/read_copynumber_seqz.R
 b2fb60215f5150002b32e696bc54c5c5 *R/read_maf.R
@@ -96,8 +96,8 @@ a5a685141a679efb9351b35775abe378 *R/transform_seg_table.R
 94d92ee75d8c94ae1ce91d0a6977c4c4 *R/utils_mem.R
 acd061892b1d07b13245e094db9dbf0f *R/zzz.R
 efee4a45a941b421d0e9b3aaa83e0c05 *README.md
-84c683a85886e0fbc90a04f9c9e71286 *build/partial.rdb
-df7642b8e5d2eaa2487a3d191a5d37e6 *build/vignette.rds
+40e26f1b3a30cbad900564079491ff3b *build/partial.rdb
+72c8a7e4f3f0cbb771d59ab3d0de4f07 *build/vignette.rds
 5ba403d476bdc5dbe1706dfef410219f *data/CN.features.rda
 d3d9f942b87249a47f7794facc5e55a5 *data/centromeres.hg19.rda
 66bcbac28c945b880bf07f0d3410f143 *data/centromeres.hg38.rda
@@ -119,7 +119,7 @@ f016fb5cf892be4352e995fbaa352a86 *data/transcript.mm10.rda
 494181c4a36f59450ff47c4bd20e25bd *inst/CITATION
 851a744d4c4fb7fa62245221da4b9457 *inst/doc/sigminer.R
 e3319d25b580a2f30dae1c551ee8046c *inst/doc/sigminer.Rmd
-0fc4ef30dcbf8695dd32cc67e7d6827c *inst/doc/sigminer.html
+0474221ffde1ccd7ab8e526d4abf83f3 *inst/doc/sigminer.html
 20ca8938f1d727fed87d19a92c62872d *inst/extdata/CN40-Map.txt
 0bd9429341cf2a282088948f6f45fd5b *inst/extdata/CN48-Map.txt
 404727e7eb984abd5072fedb049ff06d *inst/extdata/CNS_signatures_USARC.rds
