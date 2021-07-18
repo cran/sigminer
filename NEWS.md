@@ -1,3 +1,9 @@
+# sigminer 2.0.3
+
+- Preprocessed INDELs before labeling them in `sig_tally()` (#370).
+- Fixed `sigprofiler_extract()` extracting copy number signatures and
+rolled up sigprofiler version (#369).
+
 # sigminer 2.0.2
 
 - Fixed `output_sig()` error in handling exposure plot with >9 signatures (#366).

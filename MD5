@@ -1,7 +1,7 @@
-fbbd2c91b8ad5af1bca192277456a056 *DESCRIPTION
+e800a0dc05301c82fa849da167879c59 *DESCRIPTION
 bce7cc972e1074ba19eb5baf90ac73f9 *LICENSE
 9db1ee76536519897b463a3c9682032e *NAMESPACE
-98328425af8ac3a23676549dd7fb08d5 *NEWS.md
+73d16ccb003178cf21d38d5fdd637394 *NEWS.md
 03c96fb9651ae3dcd92e85d5848dada3 *R/CN-mutex-classification-method.R
 6649933011f597e7eb4b04178e6d365c *R/RcppExports.R
 a021446c9255ce9a0473e96e59a7081c *R/add_h_arrow.R
@@ -15,7 +15,7 @@ d9c3a4928eba3517f96ea19f58263afd *R/cosine.R
 d02aae7ccff972effcf1ad422f17f79c *R/data.R
 d6d7fbfe9f2e87ffd24b381174d30370 *R/enrich_component_strand_bias.R
 f0ae2e6bbf2a931e741b12ddcebc4bc4 *R/find_enriched_signature.R
-aeeddddd0c2c7ced466fa6a5a0c4ff6e *R/generate_matrices.R
+c1a1ade826c45fc1fe2a1eddceb53114 *R/generate_matrices.R
 c6091e662723e9c0ceadadcd9bc12c98 *R/get.R
 477156ad5eb1305dbc10c019e8b6a56d *R/get_adj_p.R
 3c703dc33a2a655d53c9db7906018395 *R/get_bayesian_result.R
@@ -83,11 +83,11 @@ ba980afecea320e0ef5263807405d0f2 *R/show_sig_profile_heatmap.R
 d8afc311f3514e74c96fee06dd1c9101 *R/sig_fit.R
 fd86760de4c8785d9e785ad7f531f390 *R/sig_fit_bootstrap.R
 7e28c7eddf162eee1197bcc93918def1 *R/sig_fit_bootstrap_batch.R
-db60a6850fcb005090d9220cbac90574 *R/sig_tally.R
+5e2f99f7c299ff34fed843f266536429 *R/sig_tally.R
 69977e14e4e01ce67fd4720b9f1a6d55 *R/sigflow.R
 faf596b2b795d41e9421560ed8b1626e *R/sigminer.R
 8c267ffdfcd9582b6eea7803b43dd7a6 *R/signature_obj_operation.R
-da7c14eb3402ef116473fc9100f6e2f0 *R/sigprofiler.R
+acd3bb4baefb2ba6c80bfa31f581fea8 *R/sigprofiler.R
 af72c2562bb30399d98eb425c5144082 *R/simulation.R
 a5a685141a679efb9351b35775abe378 *R/transform_seg_table.R
 65cef5e0674056f6fc07dd2b3ca85c13 *R/utils-pipe.R
@@ -96,7 +96,7 @@ a5a685141a679efb9351b35775abe378 *R/transform_seg_table.R
 94d92ee75d8c94ae1ce91d0a6977c4c4 *R/utils_mem.R
 acd061892b1d07b13245e094db9dbf0f *R/zzz.R
 efee4a45a941b421d0e9b3aaa83e0c05 *README.md
-40e26f1b3a30cbad900564079491ff3b *build/partial.rdb
+d8687467697e7efdf9f71b1b5280efcc *build/partial.rdb
 72c8a7e4f3f0cbb771d59ab3d0de4f07 *build/vignette.rds
 5ba403d476bdc5dbe1706dfef410219f *data/CN.features.rda
 d3d9f942b87249a47f7794facc5e55a5 *data/centromeres.hg19.rda
@@ -116,10 +116,10 @@ ad5975138ada9d881a7ab73c8de43a96 *data/cytobands.mm10.rda
 fbfe48915d4b8e7cd8bbd19ce058c04b *data/transcript.hg38.rda
 f016fb5cf892be4352e995fbaa352a86 *data/transcript.mm10.rda
 42bdb29bc709c1df274b582e326dd601 *data/transcript.mm9.rda
-494181c4a36f59450ff47c4bd20e25bd *inst/CITATION
+aa77de5bc59156f7d40b6229bf441377 *inst/CITATION
 851a744d4c4fb7fa62245221da4b9457 *inst/doc/sigminer.R
 e3319d25b580a2f30dae1c551ee8046c *inst/doc/sigminer.Rmd
-0474221ffde1ccd7ab8e526d4abf83f3 *inst/doc/sigminer.html
+d12d1df580f2e89535fc0c8c132b9e49 *inst/doc/sigminer.html
 20ca8938f1d727fed87d19a92c62872d *inst/extdata/CN40-Map.txt
 0bd9429341cf2a282088948f6f45fd5b *inst/extdata/CN48-Map.txt
 404727e7eb984abd5072fedb049ff06d *inst/extdata/CNS_signatures_USARC.rds
@@ -138,6 +138,7 @@ b6c4c57e33a266c9f442133f8e218dc8 *inst/extdata/SBS_signatures_Nik_lab_Organ.rds
 64b7eb396880bc462a4b23370b265f44 *inst/extdata/asso_data.RData
 c00a26667286d596229a6eeaae86ea2f *inst/extdata/cosmic2_record_by_cancer.rds
 283cd49ce3367d3fa950656d7528785b *inst/extdata/e1.RData
+b47bfdf1ec3fd0c1e833f135e5556d90 *inst/extdata/human_hg19_gene_info.rds
 b869391cdccc84740b0ba4e977ad54ac *inst/extdata/metastatic_tumor.segtab.txt
 c458e5b72f5dc97d9d403602114a6250 *inst/extdata/mouse_mm9_gene_info.rds
 b327bb84fa655c8564d019218f74caed *inst/extdata/signature_record_by_cancer.rds
@@ -249,7 +250,7 @@ cbd2e1d9d1471fb75e7e528eb324012d *man/sig_fit_bootstrap.Rd
 3c90742a6846156c0b97815dbf38aaad *man/sig_operation.Rd
 33a262875c80429f2cd1b467d444a7a7 *man/sig_tally.Rd
 8a3d0c50f050125d0c9789da687e7d60 *man/sigminer.Rd
-8ea7be048257879cbebcbe5e3e5c3b7d *man/sigprofiler.Rd
+888d428aca777bdfc5bdec30c57afdf6 *man/sigprofiler.Rd
 e4e54503b4569ed3f965a1ee37a34024 *man/simulated_catalogs.Rd
 33b9d70620c26d4e87c1634567a3289c *man/simulation.Rd
 3711939410914988afd94ae80f35004c *man/subset.CopyNumber.Rd

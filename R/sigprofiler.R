@@ -60,7 +60,7 @@ sigprofiler_extract <- function(nmf_matrix, output, range = 2:5, nrun = 10L,
                                 genome_build = c("hg19", "hg38", "mm10", "mm9"),
                                 use_conda = FALSE,
                                 py_path = NULL,
-                                sigprofiler_version = "1.1.0") {
+                                sigprofiler_version = "1.1.3") {
   output <- path.expand(output)
   genome_build <- match.arg(genome_build)
 
@@ -99,7 +99,7 @@ sigprofiler_extract <- function(nmf_matrix, output, range = 2:5, nrun = 10L,
 
   in_df <- nmf_matrix %>%
     as.data.frame() %>%
-    tibble::rownames_to_column("MutationType")
+    tibble::rownames_to_column("Mutation Types")
 
   tmp_dir <- basename(tempfile(pattern = "dir"))
   tmp_dir_full <- file.path(tempdir(), tmp_dir)
