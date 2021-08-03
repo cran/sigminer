@@ -9,8 +9,8 @@ sig_fit(
   sig,
   sig_index = NULL,
   sig_db = c("legacy", "SBS", "DBS", "ID", "TSB", "SBS_Nik_lab", "RS_Nik_lab",
-    "RS_BRCA560", "RS_USARC", "CNS_USARC", "SBS_hg19", "SBS_hg38", "SBS_mm9", "SBS_mm10",
-    "DBS_hg19", "DBS_hg38", "DBS_mm9", "DBS_mm10", "SBS_Nik_lab_Organ",
+    "RS_BRCA560", "RS_USARC", "CNS_USARC", "CNS_TCGA", "SBS_hg19", "SBS_hg38", "SBS_mm9",
+    "SBS_mm10", "DBS_hg19", "DBS_hg38", "DBS_mm9", "DBS_mm10", "SBS_Nik_lab_Organ",
     "RS_Nik_lab_Organ", "latest_SBS_GRCh37", "latest_DBS_GRCh37", "latest_ID_GRCh37",
     "latest_SBS_GRCh38", "latest_DBS_GRCh38", "latest_SBS_mm9", "latest_DBS_mm9",
     "latest_SBS_mm10", "latest_DBS_mm10", "latest_SBS_rn6", "latest_DBS_rn6"),
@@ -39,13 +39,16 @@ column representing signatures.}
 \item{sig_index}{a vector for signature index. "ALL" for all signatures.}
 
 \item{sig_db}{default 'legacy', it can be 'legacy' (for \href{https://cancer.sanger.ac.uk/cosmic/signatures_v2.tt/}{COSMIC v2 'SBS'}),
-'SBS', 'DBS', 'ID' and 'TSB' (for \href{https://cancer.sanger.ac.uk/cosmic/signatures/}{COSMIV v3.1 signatures}).
+'SBS', 'DBS', 'ID' and 'TSB' (for \href{https://cancer.sanger.ac.uk/cosmic/signatures/}{COSMIV v3.1 signatures})
+for small scale mutations.
 For more specific details, it can also be 'SBS_hg19', 'SBS_hg38',
 'SBS_mm9', 'SBS_mm10', 'DBS_hg19', 'DBS_hg38', 'DBS_mm9', 'DBS_mm10' to use
 COSMIC v3 reference signatures from Alexandrov, Ludmil B., et al. (2020) (reference #1).
 In addition, it can be one of "SBS_Nik_lab_Organ", "RS_Nik_lab_Organ",
 "SBS_Nik_lab", "RS_Nik_lab" to refer reference signatures from
-Degasperi, Andrea, et al. (2020) (reference #2).
+Degasperi, Andrea, et al. (2020) (reference #2);
+"RS_BRCA560", "RS_USARC" to reference signatures from BRCA560 and USARC cohorts;
+"CNS_USARC" (40 categories), "CNS_TCGA" (48 categories) to reference copy number signatures from USARC cohort and TCGA.
 \strong{UPDATE}, the latest version of reference version can be automatically
 downloaded and loaded from \url{https://cancer.sanger.ac.uk/signatures/downloads/}
 when a option with \code{latest_} prefix is specified (e.g. "latest_SBS_GRCh37").

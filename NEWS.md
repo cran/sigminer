@@ -1,3 +1,13 @@
+# sigminer 2.0.4
+
+- Implemented Cohen-Sharir method-like Aneuploidy Score.
+- Enhanced error handling in `show_sig_feature_corrplot()` (#376).
+- Fixed INDEL classification.
+- Fixed end position determination in `read_vcf()`.
+- Updated INDEL adjustment.
+- Included TCGA copy number signatures from SigProfiler.
+- Updated docs.
+
 # sigminer 2.0.3
 
 - Preprocessed INDELs before labeling them in `sig_tally()` (#370).

@@ -60,7 +60,8 @@ read_vcf <- function(vcfs, samples = NULL, genome_build = c("hg19", "hg38", "mm1
     vcfs$Chromosome,
     paste0("chr", vcfs$Chromosome)
   )
-  vcfs$End_Position <- vcfs$Start_Position + pmax(nchar(vcfs$Reference_Allele), nchar(vcfs$Tumor_Seq_Allele2)) - 1L
+
+  vcfs$End_Position <- vcfs$Start_Position + nchar(vcfs$Reference_Allele) - 1L
 
   if (verbose) message("Annotating Variant Type...")
   vcfs$Variant_Type <- dplyr::case_when(
