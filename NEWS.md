@@ -1,3 +1,8 @@
+# sigminer 2.1.0
+
+- Added `sig_unify_extract()` as an unified signature extractor.
+- Fixed error showing reference signature profile for `CNS_TCGA` database.
+
 # sigminer 2.0.5
 
 - Impl `y_limits` option in `show_sig_profile()` (#381).
