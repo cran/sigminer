@@ -1,3 +1,9 @@
+# sigminer 2.1.1
+
+- Expanded `output_*` function by adding option `sig_db`.
+- Fixed the error using `sigminer::get_genome_annotation()` before loading it.
+- Fixed the bug the `get_pLOH_score()` return nothing for sample without LOH.
+
 # sigminer 2.1.0
 
 - Added `sig_unify_extract()` as an unified signature extractor.
@@ -118,7 +124,7 @@ PAY ATTENTION: this may affect results.
 ## ENHANCEMENTS
 
 - Subset signatures to plot is available by `sig_names` option.
-- sigminer is available in bioconda channel: <https://anaconda.org/bioconda/r-sigminer/>
+- sigminer is available in bioconda channel: `https://anaconda.org/bioconda/r-sigminer/`
 - Updated `ms` strategy in `sig_auto_extract()` by assigning each signature to its
 best matched reference signatures.
 - Added `get_shannon_diversity_index()` to get diversity index for signatures (#333).

@@ -1,7 +1,7 @@
-a4370f6225aed3224b536b66fe3355f6 *DESCRIPTION
+5f09b0e5d8545072ba063c541cd62dcf *DESCRIPTION
 bce7cc972e1074ba19eb5baf90ac73f9 *LICENSE
 b58924b1afbd4d195b326e16f2155e9e *NAMESPACE
-48920fb301d8320efe9bf534b436b0fd *NEWS.md
+d01a39123631f54fc522abe6eb76948a *NEWS.md
 03c96fb9651ae3dcd92e85d5848dada3 *R/CN-mutex-classification-method.R
 d7afaed9ca93844df00f8089351a21c3 *R/RcppExports.R
 a021446c9255ce9a0473e96e59a7081c *R/add_h_arrow.R
@@ -22,11 +22,11 @@ e9d52a5976dc526186c1208882fba700 *R/generate_matrices.R
 3c703dc33a2a655d53c9db7906018395 *R/get_bayesian_result.R
 eb6e4269736c0e90551c67de0727cab6 *R/get_cn_freq_table.R
 3ca63279540da3e6dfb12422cc5977b4 *R/get_cn_ploidy.R
-fdc72d7190e52f0a49b9536ddfa36c04 *R/get_genome_annotation.R
+8f9c65a225ef92306f337f6b2dd24bb4 *R/get_genome_annotation.R
 b875174135783dbe2ca8cb701ccc63ca *R/get_group_comparison.R
 d542ef2704728f67e12cf16f375cc5d9 *R/get_groups.R
 6ceac8bdabf60b6e854bea9801647f3e *R/get_intersect_size.R
-41a61c5ae4041afc540363095c019c8e *R/get_pLOH_score.R
+cdc75f16cf81c13635b88196ad7633f1 *R/get_pLOH_score.R
 c8d2ac0303e5b412ceb2b938b950fa61 *R/get_reconstructed_similarity.R
 c00cbae65fb62f20ed52d42328acafc6 *R/get_shannon_diversity_index.R
 af9295fe2b5697825b0eb6ec0d8c8db5 *R/get_sig_cancer_type_index.R
@@ -48,7 +48,7 @@ b1ef4ac184d9f6c72eca5c7db49402a1 *R/helper_join_segments.R
 474823aec370774c42f5acc3504377d1 *R/helper_normalize_by_feature.R
 86946ad5f4fd0f1d8e1f3955fa5a9eed *R/helper_scale_nmf_matrix.R
 dd6aa03b11d5f642f4d06f72272a1bd5 *R/helper_sort_signature.R
-d69bf3128daff4f4ee703f2e51e4e3f2 *R/output.R
+0b7de0ac74ef578f9adde97ffd8e77d5 *R/output.R
 8400efa4e7696f886ec0174050e4b07a *R/read_copynumber.R
 dfd11d3f205ef8d902962861b26fc3fc *R/read_copynumber_ascat.R
 e0c8c385e94a7cf4b265a00fdfa68d29 *R/read_copynumber_seqz.R
@@ -101,8 +101,8 @@ a5a685141a679efb9351b35775abe378 *R/transform_seg_table.R
 94d92ee75d8c94ae1ce91d0a6977c4c4 *R/utils_mem.R
 acd061892b1d07b13245e094db9dbf0f *R/zzz.R
 890bcdb943159225c2ee49804591e0da *README.md
-f4d2566849abdcae8600e2da719eba38 *build/partial.rdb
-72c8a7e4f3f0cbb771d59ab3d0de4f07 *build/vignette.rds
+8cd937960844ebb888f7e9fc0aa20009 *build/partial.rdb
+b8bc47233b1297dce8cd06ebf5168681 *build/vignette.rds
 5ba403d476bdc5dbe1706dfef410219f *data/CN.features.rda
 d3d9f942b87249a47f7794facc5e55a5 *data/centromeres.hg19.rda
 66bcbac28c945b880bf07f0d3410f143 *data/centromeres.hg38.rda
@@ -124,7 +124,7 @@ f016fb5cf892be4352e995fbaa352a86 *data/transcript.mm10.rda
 aa77de5bc59156f7d40b6229bf441377 *inst/CITATION
 851a744d4c4fb7fa62245221da4b9457 *inst/doc/sigminer.R
 bd435b5d5ac75c05fa15b77d47e3f7f9 *inst/doc/sigminer.Rmd
-9fea6d49bace00c2e5b9385b701f3a09 *inst/doc/sigminer.html
+811fa491ffede498a3d38e130edfed83 *inst/doc/sigminer.html
 20ca8938f1d727fed87d19a92c62872d *inst/extdata/CN40-Map.txt
 0bd9429341cf2a282088948f6f45fd5b *inst/extdata/CN48-Map.txt
 6c3e862ecf6e1891210bfe031675a709 *inst/extdata/CNS_signatures_TCGA.rds
@@ -144,9 +144,7 @@ b6c4c57e33a266c9f442133f8e218dc8 *inst/extdata/SBS_signatures_Nik_lab_Organ.rds
 64b7eb396880bc462a4b23370b265f44 *inst/extdata/asso_data.RData
 c00a26667286d596229a6eeaae86ea2f *inst/extdata/cosmic2_record_by_cancer.rds
 283cd49ce3367d3fa950656d7528785b *inst/extdata/e1.RData
-b47bfdf1ec3fd0c1e833f135e5556d90 *inst/extdata/human_hg19_gene_info.rds
 b869391cdccc84740b0ba4e977ad54ac *inst/extdata/metastatic_tumor.segtab.txt
-c458e5b72f5dc97d9d403602114a6250 *inst/extdata/mouse_mm9_gene_info.rds
 b327bb84fa655c8564d019218f74caed *inst/extdata/signature_record_by_cancer.rds
 9d2382bfdd50e3cf21d4fd1127fd3812 *inst/extdata/test1.vcf
 ccb4fe81e12091f0ecacff7d11aa104a *inst/extdata/test2.vcf
@@ -209,9 +207,9 @@ bc9ea372e63c5b0eb3d6b0bf9a875111 *man/get_tidy_association.Rd
 1a1408b04bfc368ace5110a6598811e7 *man/group_enrichment.Rd
 298eeaa1ac5a173b3a02d28793994cf5 *man/handle_hyper_mutation.Rd
 57106e84fe7e0da75ecca6c9af270d43 *man/hello.Rd
-eb20a976276c8c4899c97d3cc695d1cd *man/output_bootstrap.Rd
-c23e68cd70ba1129d61d9439b5db86c9 *man/output_fit.Rd
-c8b7dc057ec9ad1a3ed8759c0006163b *man/output_sig.Rd
+1079002c63dc8d21829b10c129909639 *man/output_bootstrap.Rd
+6e05a03eb180935c15fa515795e27d30 *man/output_fit.Rd
+44ba4a993916069be4dc432b046bd188 *man/output_sig.Rd
 de4f29385e753f9659a9a681a21baef6 *man/output_tally.Rd
 4894ca10756199e25f914bfd34f517b0 *man/pipe.Rd
 ebf12de39e0bc764ce99f0eebec3bdfb *man/read_copynumber.Rd
