@@ -1,7 +1,7 @@
-5f09b0e5d8545072ba063c541cd62dcf *DESCRIPTION
+a142b155094b3ab067d42948f98c0d43 *DESCRIPTION
 bce7cc972e1074ba19eb5baf90ac73f9 *LICENSE
 b58924b1afbd4d195b326e16f2155e9e *NAMESPACE
-d01a39123631f54fc522abe6eb76948a *NEWS.md
+59982b3d2b04b911e315ff3d8d49a3a1 *NEWS.md
 03c96fb9651ae3dcd92e85d5848dada3 *R/CN-mutex-classification-method.R
 d7afaed9ca93844df00f8089351a21c3 *R/RcppExports.R
 a021446c9255ce9a0473e96e59a7081c *R/add_h_arrow.R
@@ -51,7 +51,7 @@ dd6aa03b11d5f642f4d06f72272a1bd5 *R/helper_sort_signature.R
 0b7de0ac74ef578f9adde97ffd8e77d5 *R/output.R
 8400efa4e7696f886ec0174050e4b07a *R/read_copynumber.R
 dfd11d3f205ef8d902962861b26fc3fc *R/read_copynumber_ascat.R
-e0c8c385e94a7cf4b265a00fdfa68d29 *R/read_copynumber_seqz.R
+aee78b565457e32da3eac3d4e5187cb2 *R/read_copynumber_seqz.R
 b2fb60215f5150002b32e696bc54c5c5 *R/read_maf.R
 8c2700aaea61c4628de1a5ade9111e42 *R/read_vcf.R
 9aa4c10d650010140ac980615f802430 *R/same_size_clustering.R
@@ -82,7 +82,7 @@ ba980afecea320e0ef5263807405d0f2 *R/show_sig_profile_heatmap.R
 1dfb122a2e7544abaaf5526436e984dc *R/show_sig_profile_loop.R
 21b4122412c3a762707793068974634e *R/sig_auto_extract.R
 29656bd696c0c71bf8a122fc897c3fea *R/sig_convert.R
-3febe3f0d35acba48d28991f613e3861 *R/sig_estimate.R
+1075ea516604f2b786305a56c667a39b *R/sig_estimate.R
 cb017be7048ddac1d330e796a9cbc094 *R/sig_extract.R
 d2ee35cfa3d5f46d4372089e0d24fa27 *R/sig_fit.R
 fd86760de4c8785d9e785ad7f531f390 *R/sig_fit_bootstrap.R
@@ -100,9 +100,9 @@ a5a685141a679efb9351b35775abe378 *R/transform_seg_table.R
 5d2b0a38a18f88d02e26b006e1d15a30 *R/utils.R
 94d92ee75d8c94ae1ce91d0a6977c4c4 *R/utils_mem.R
 acd061892b1d07b13245e094db9dbf0f *R/zzz.R
-890bcdb943159225c2ee49804591e0da *README.md
-8cd937960844ebb888f7e9fc0aa20009 *build/partial.rdb
-b8bc47233b1297dce8cd06ebf5168681 *build/vignette.rds
+fc44bf8cef77aec996316528bf5fe3df *README.md
+b4dc65e12d21ea0ff735100a923ac672 *build/partial.rdb
+72c8a7e4f3f0cbb771d59ab3d0de4f07 *build/vignette.rds
 5ba403d476bdc5dbe1706dfef410219f *data/CN.features.rda
 d3d9f942b87249a47f7794facc5e55a5 *data/centromeres.hg19.rda
 66bcbac28c945b880bf07f0d3410f143 *data/centromeres.hg38.rda
@@ -124,7 +124,7 @@ f016fb5cf892be4352e995fbaa352a86 *data/transcript.mm10.rda
 aa77de5bc59156f7d40b6229bf441377 *inst/CITATION
 851a744d4c4fb7fa62245221da4b9457 *inst/doc/sigminer.R
 bd435b5d5ac75c05fa15b77d47e3f7f9 *inst/doc/sigminer.Rmd
-811fa491ffede498a3d38e130edfed83 *inst/doc/sigminer.html
+8162fc517af20f400327e4fe6a229db1 *inst/doc/sigminer.html
 20ca8938f1d727fed87d19a92c62872d *inst/extdata/CN40-Map.txt
 0bd9429341cf2a282088948f6f45fd5b *inst/extdata/CN48-Map.txt
 6c3e862ecf6e1891210bfe031675a709 *inst/extdata/CNS_signatures_TCGA.rds
@@ -144,7 +144,9 @@ b6c4c57e33a266c9f442133f8e218dc8 *inst/extdata/SBS_signatures_Nik_lab_Organ.rds
 64b7eb396880bc462a4b23370b265f44 *inst/extdata/asso_data.RData
 c00a26667286d596229a6eeaae86ea2f *inst/extdata/cosmic2_record_by_cancer.rds
 283cd49ce3367d3fa950656d7528785b *inst/extdata/e1.RData
+b47bfdf1ec3fd0c1e833f135e5556d90 *inst/extdata/human_hg19_gene_info.rds
 b869391cdccc84740b0ba4e977ad54ac *inst/extdata/metastatic_tumor.segtab.txt
+c458e5b72f5dc97d9d403602114a6250 *inst/extdata/mouse_mm9_gene_info.rds
 b327bb84fa655c8564d019218f74caed *inst/extdata/signature_record_by_cancer.rds
 9d2382bfdd50e3cf21d4fd1127fd3812 *inst/extdata/test1.vcf
 ccb4fe81e12091f0ecacff7d11aa104a *inst/extdata/test2.vcf
