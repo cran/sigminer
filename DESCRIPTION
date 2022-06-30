@@ -1,44 +1,30 @@
 Package: sigminer
 Title: Extract, Analyze and Visualize Mutational Signatures for Genomic
         Variations
-Version: 2.1.4
-Authors@R: 
-    c(person(given = "Shixiang",
-             family = "Wang",
-             role = c("aut", "cre"),
-             email = "w_shixiang@163.com",
-             comment = c(ORCID = "0000-0001-9855-7357")),
-      person(given = "Ziyu",
-             family = "Tao",
-             role = "aut",
-             email = "taozy@shanghaitech.edu.cn",
-             comment = c(ORCID = "0000-0003-3272-1227")),
-      person(given = "Huimin",
-             family = "Li",
-             role = "aut",
-             email = "lihm@shanghaitech.edu.cn",
-             comment = c(ORCID = "0000-0003-1683-9057")),
-      person(given = "Tao",
-             family = "Wu",
-             role = "aut",
-             email = "wutao2@shanghaitech.edu.cn",
-             comment = c(ORCID = "0000-0002-8999-9628")),
-      person(given = "Xue-Song",
-             family = "Liu",
-             role = c("aut", "ctb"),
-             comment = c(ORCID = "0000-0002-7736-0077")),
-      person(given = "Anand",
-             family = "Mayakonda",
-             role = "ctb"))
-Description: Genomic alterations including single nucleotide
-    substitution, copy number alteration, etc. are the major force for
-    cancer initialization and development. Due to the specificity of
-    molecular lesions caused by genomic alterations, we can generate
-    characteristic alteration spectra, called 'signature' (Wang, Shixiang,
-    et al.  (2020) <DOI:10.1371/journal.pgen.1009557> & Alexandrov, Ludmil
-    B., et al. (2020) <DOI:10.1038/s41586-020-1943-3>).  This package helps
-    users to extract, analyze and visualize signatures from genomic
-    alteration records, thus providing new insight into cancer study.
+Version: 2.1.5
+Authors@R: c(
+    person("Shixiang", "Wang", , "w_shixiang@163.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-9855-7357")),
+    person("Ziyu", "Tao", , "taozy@shanghaitech.edu.cn", role = "aut",
+           comment = c(ORCID = "0000-0003-3272-1227")),
+    person("Huimin", "Li", , "lihm@shanghaitech.edu.cn", role = "aut",
+           comment = c(ORCID = "0000-0003-1683-9057")),
+    person("Tao", "Wu", , "wutao2@shanghaitech.edu.cn", role = "aut",
+           comment = c(ORCID = "0000-0002-8999-9628")),
+    person("Xue-Song", "Liu", role = c("aut", "ctb"),
+           comment = c(ORCID = "0000-0002-7736-0077")),
+    person("Anand", "Mayakonda", role = "ctb")
+  )
+Description: Genomic alterations including single nucleotide substitution,
+    copy number alteration, etc. are the major force for cancer
+    initialization and development. Due to the specificity of molecular
+    lesions caused by genomic alterations, we can generate characteristic
+    alteration spectra, called 'signature' (Wang, Shixiang, et al. (2021)
+    <DOI:10.1371/journal.pgen.1009557> & Alexandrov, Ludmil B., et al.
+    (2020) <DOI:10.1038/s41586-020-1943-3> & Steele Christopher D., et al.
+    (2022) <DOI:10.1038/s41586-022-04738-6>).  This package helps users to
+    extract, analyze and visualize signatures from genomic alteration
+    records, thus providing new insight into cancer study.
 License: MIT + file LICENSE
 URL: https://github.com/ShixiangWang/sigminer
 BugReports: https://github.com/ShixiangWang/sigminer/issues
@@ -47,20 +33,20 @@ Imports: cli (>= 2.0.0), cowplot, data.table, dplyr, furrr (>= 0.2.0),
         future, ggplot2 (>= 3.3.0), ggpubr, maftools, magrittr,
         methods, NMF, purrr, Rcpp, rlang (>= 0.1.2), stats, tidyr
 Suggests: Biobase, Biostrings, BSgenome, BSgenome.Hsapiens.UCSC.hg19,
-        circlize, cluster, covr, digest, GenomicRanges, GenSA,
-        ggalluvial, ggcorrplot, ggfittext, ggplotify, ggrepel, IRanges,
-        knitr, lpSolve, markdown, matrixStats, nnls, patchwork,
-        pheatmap, quadprog, R.utils, RColorBrewer, reticulate,
-        rmarkdown, roxygen2, scales, synchronicity, testthat, tibble,
-        UCSCXenaTools, copynumber, parallel
+        circlize, cluster, copynumber, covr, digest, GenomicRanges,
+        GenSA, ggalluvial, ggcorrplot, ggfittext, ggplotify, ggrepel,
+        IRanges, knitr, lpSolve, markdown, matrixStats, nnls, parallel,
+        patchwork, pheatmap, quadprog, R.utils, RColorBrewer,
+        reticulate, rmarkdown, roxygen2, scales, synchronicity,
+        testthat, tibble, UCSCXenaTools
 LinkingTo: Rcpp
 VignetteBuilder: knitr
 biocViews:
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
 NeedsCompilation: yes
-Packaged: 2022-04-26 02:16:02 UTC; Administrator
+Packaged: 2022-06-30 10:00:13 UTC; wsx
 Author: Shixiang Wang [aut, cre] (<https://orcid.org/0000-0001-9855-7357>),
   Ziyu Tao [aut] (<https://orcid.org/0000-0003-3272-1227>),
   Huimin Li [aut] (<https://orcid.org/0000-0003-1683-9057>),
@@ -69,4 +55,4 @@ Author: Shixiang Wang [aut, cre] (<https://orcid.org/0000-0001-9855-7357>),
   Anand Mayakonda [ctb]
 Maintainer: Shixiang Wang <w_shixiang@163.com>
 Repository: CRAN
-Date/Publication: 2022-04-26 08:40:09 UTC
+Date/Publication: 2022-06-30 13:50:05 UTC
