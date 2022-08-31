@@ -1,3 +1,11 @@
+# sigminer 2.1.7
+
+- Updated COSMIC latest version from v3.2 to v3.3.
+A new reference for copy number signature now is provided as `latest_CN_GRCh37` (#412).
+- `get_sig_similarity()` now uses "SBS" as default reference.
+- Fixed bug in `show_cn_circos()`.
+- Added `group_enrichment2()`.
+
 # sigminer 2.1.6
 
 - Fixed checking in `sig_tally()`.

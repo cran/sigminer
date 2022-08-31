@@ -12,7 +12,7 @@
 
 <meta name="author" content="Shixiang Wang ( wangsx1@sysucc.org.cn )" />
 
-<meta name="date" content="2022-08-09" />
+<meta name="date" content="2022-08-30" />
 
 <title>Analyze Copy Number Signatures with sigminer</title>
 
@@ -122,13 +122,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -335,7 +342,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Analyze Copy Number Signatures with
 sigminer</h1>
 <h4 class="author">Shixiang Wang ( <a href="mailto:wangsx1@sysucc.org.cn" class="email">wangsx1@sysucc.org.cn</a> )</h4>
-<h4 class="date">2022-08-09</h4>
+<h4 class="date">2022-08-30</h4>
 
 
 
@@ -344,7 +351,7 @@ sigminer</h1>
 Analyze and Visualize Mutational Signatures with Sigminer</a>.</p>
 </blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sigminer)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sigminer version 2.1.6</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sigminer version 2.1.7</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; - Star me at https://github.com/ShixiangWang/sigminer</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; - Run hello() to see usage and citation.</span></span></code></pre></div>
 <p>For this analysis, data with six columns are required.</p>
@@ -368,36 +375,36 @@ Analyze and Visualize Mutational Signatures with Sigminer</a>.</p>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">seg_cols =</span> <span class="fu">c</span>(<span class="st">&quot;chromosome&quot;</span>, <span class="st">&quot;start&quot;</span>, <span class="st">&quot;end&quot;</span>, <span class="st">&quot;segVal&quot;</span>),</span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">genome_measure =</span> <span class="st">&quot;wg&quot;</span>, <span class="at">complement =</span> <span class="cn">TRUE</span>, <span class="at">add_loh =</span> <span class="cn">TRUE</span></span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Started.</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Genome build  : hg19.</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Genome measure: wg.</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: When add_loh is TRUE, use_all is forced to TRUE.</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:49]: Started.</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:49]: Genome build  : hg19.</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:49]: Genome measure: wg.</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:49]: When add_loh is TRUE, use_all is forced to TRUE.</span></span>
 <span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Please drop columns you don&#39;t want to keep before reading.</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Chromosome size database for build obtained.</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Reading input.</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: A data frame as input detected.</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Column names checked.</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Column order set.</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Chromosomes unified.</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Value 2 (normal copy) filled to uncalled chromosomes.</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Data imported.</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Segments info:</span></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]:     Keep - 477</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]:     Drop - 0</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Segments sorted.</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Adding LOH labels...</span></span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Joining adjacent segments with same copy number value. Be patient...</span></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: 410 segments left after joining.</span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Segmental table cleaned.</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Annotating.</span></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Annotation done.</span></span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Summarizing per sample.</span></span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Summarized.</span></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Generating CopyNumber object.</span></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Generated.</span></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Validating object.</span></span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Done.</span></span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: 0.359 secs elapsed.</span></span></code></pre></div>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:49]: Chromosome size database for build obtained.</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:49]: Reading input.</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:49]: A data frame as input detected.</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:49]: Column names checked.</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:49]: Column order set.</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:49]: Chromosomes unified.</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:49]: Value 2 (normal copy) filled to uncalled chromosomes.</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:49]: Data imported.</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:49]: Segments info:</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:49]:     Keep - 477</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:49]:     Drop - 0</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:49]: Segments sorted.</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:49]: Adding LOH labels...</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:49]: Joining adjacent segments with same copy number value. Be patient...</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:50]: 410 segments left after joining.</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:50]: Segmental table cleaned.</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:50]: Annotating.</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:50]: Annotation done.</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:50]: Summarizing per sample.</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:50]: Summarized.</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:50]: Generating CopyNumber object.</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:50]: Generated.</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:50]: Validating object.</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:50]: Done.</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:50]: 0.358 secs elapsed.</span></span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>cn</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; An object of class CopyNumber </span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; =============================</span></span>
@@ -456,10 +463,10 @@ Analyze and Visualize Mutational Signatures with Sigminer</a>.</p>
 method argument.</p>
 </blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>tally_s <span class="ot">&lt;-</span> <span class="fu">sig_tally</span>(cn, <span class="at">method =</span> <span class="st">&quot;S&quot;</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: Started.</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: When you use method &#39;S&#39;, please make sure you have set &#39;join_adj_seg&#39; to FALSE and &#39;add_loh&#39; to TRUE in &#39;read_copynumber() in the previous step!</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:22]: Matrix generated.</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:22]: 0.027 secs elapsed.</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:50]: Started.</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:50]: When you use method &#39;S&#39;, please make sure you have set &#39;join_adj_seg&#39; to FALSE and &#39;add_loh&#39; to TRUE in &#39;read_copynumber() in the previous step!</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:50]: Matrix generated.</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:50]: 0.034 secs elapsed.</span></span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(tally_s<span class="sc">$</span>all_matrices, <span class="at">max.level =</span> <span class="dv">1</span>)</span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; List of 2</span></span>
@@ -486,35 +493,35 @@ method argument.</p>
 <p>This directly calculates the contribution of 19 reference
 signatures.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>act_refit <span class="ot">=</span> <span class="fu">sig_fit</span>(<span class="fu">t</span>(tally_s<span class="sc">$</span>all_matrices<span class="sc">$</span>CN_48), <span class="at">sig_index =</span> <span class="st">&quot;ALL&quot;</span>, <span class="at">sig_db =</span> <span class="st">&quot;CNS_TCGA&quot;</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Started.</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:23]: Signature index detected.</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Checking signature database in package.</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Checking signature index.</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Valid index for db &#39;CNS_TCGA&#39;:</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Started.</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:51]: Signature index detected.</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Checking signature database in package.</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Checking signature index.</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Valid index for db &#39;CNS_TCGA&#39;:</span></span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; CN1 CN2 CN3 CN4 CN5 CN6 CN7 CN8 CN9 CN10 CN11 CN12 CN13 CN14 CN15 CN16 CN17 CN18 CN19</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:23]: Database and index checked.</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:23]: Signature normalized.</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Checking row number for catalog matrix and signature matrix.</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:23]: Checked.</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Checking rownames for catalog matrix and signature matrix.</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:23]: Checked.</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:23]: Method &#39;QP&#39; detected.</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:23]: Corresponding function generated.</span></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Calling function.</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Fitting sample: TCGA-05-4417-01A-22D-1854-01</span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Fitting sample: TCGA-06-0644-01A-02D-0310-01</span></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Fitting sample: TCGA-19-2621-01B-01D-0911-01</span></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Fitting sample: TCGA-26-6174-01A-21D-1842-01</span></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Fitting sample: TCGA-99-7458-01A-11D-2035-01</span></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Fitting sample: TCGA-A5-A0G2-01A-11D-A042-01</span></span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Fitting sample: TCGA-A8-A07S-01A-11D-A036-01</span></span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Fitting sample: TCGA-B6-A0X5-01A-21D-A107-01</span></span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Fitting sample: TCGA-CV-7432-01A-11D-2128-01</span></span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Fitting sample: TCGA-DF-A2KN-01A-11D-A17U-01</span></span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:23]: Done.</span></span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: Generating output signature exposures.</span></span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-09 22:36:23]: Done.</span></span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-09 22:36:23]: 0.059 secs elapsed.</span></span></code></pre></div>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:51]: Database and index checked.</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:51]: Signature normalized.</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Checking row number for catalog matrix and signature matrix.</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:51]: Checked.</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Checking rownames for catalog matrix and signature matrix.</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:51]: Checked.</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:51]: Method &#39;QP&#39; detected.</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:51]: Corresponding function generated.</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Calling function.</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Fitting sample: TCGA-05-4417-01A-22D-1854-01</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Fitting sample: TCGA-06-0644-01A-02D-0310-01</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Fitting sample: TCGA-19-2621-01B-01D-0911-01</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Fitting sample: TCGA-26-6174-01A-21D-1842-01</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Fitting sample: TCGA-99-7458-01A-11D-2035-01</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Fitting sample: TCGA-A5-A0G2-01A-11D-A042-01</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Fitting sample: TCGA-A8-A07S-01A-11D-A036-01</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Fitting sample: TCGA-B6-A0X5-01A-21D-A107-01</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Fitting sample: TCGA-CV-7432-01A-11D-2128-01</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Fitting sample: TCGA-DF-A2KN-01A-11D-A17U-01</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:51]: Done.</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: Generating output signature exposures.</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ✔ [2022-08-30 23:28:51]: Done.</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ [2022-08-30 23:28:51]: 0.06 secs elapsed.</span></span></code></pre></div>
 <p>We can use some threshold to keep really contributed signautres.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>act_refit2 <span class="ot">=</span> act_refit[<span class="fu">apply</span>(act_refit, <span class="dv">1</span>, <span class="cf">function</span>(x) <span class="fu">sum</span>(x) <span class="sc">&gt;</span> <span class="fl">0.1</span>),]</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
