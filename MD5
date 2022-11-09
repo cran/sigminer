@@ -1,7 +1,7 @@
-7249ba4031d29733b36dc72fb2dbfe71 *DESCRIPTION
+84382fffe87ddcc92b400571aadfb322 *DESCRIPTION
 c5d90c3138156e888e7ba7b08432dba6 *LICENSE
-57e6e72af565b6e45d5988aa6026b6a8 *NAMESPACE
-bcf85c1c3afb61e2ded3e510e857e8e5 *NEWS.md
+7235bab491adb119c3efd5172f1963fd *NAMESPACE
+73fb81d1ed6ecd9319e2f704cbdfbc98 *NEWS.md
 ff6052ce5606c281d731918d08a01f15 *R/CN-mutex-classification-method.R
 58dcd66641a172395296c49a8c35855d *R/RcppExports.R
 3cd89bbd25e4bd65565c1978430d6524 *R/add_h_arrow.R
@@ -15,7 +15,7 @@ b55c587092573770ca3d6d15c1f6e5e5 *R/cosine.R
 79ed04280e7d25d6f3dfb727bb399b5d *R/data.R
 ffded2f882294bb2b7da1eb5d796af48 *R/enrich_component_strand_bias.R
 e4f194d1ca32426d4a4a9f2288b5abb2 *R/find_enriched_signature.R
-e40c0b06a068dff303d87018cd5414d6 *R/generate_matrices.R
+97e8d06320f22cff88fb1bd7aff6b6f7 *R/generate_matrices.R
 85e194406205fb090ee1757f554670ea *R/get.R
 493c0dfa28bf7b1b6e55ee616ff3b07f *R/get_Aneuploidy_score.R
 50cabbdbc1e8cefa8956abccb13051bb *R/get_adj_p.R
@@ -40,7 +40,7 @@ ce4731f564a47a533f5d28f68a3e0a94 *R/get_tidy_association.R
 00dca66d603ef56001e1e329a262766a *R/globalVariables.R
 98f7c15ff358069602fbd549cc062086 *R/group_enrichment.R
 87703db8a017374760cfcc2b36e0a300 *R/handle_hyper_mutation.R
-f5cac7fd84c3d0603497f46ce6c95c1f *R/hello.R
+aa9d1dc60c89af79460ace3550a4e8ba *R/hello.R
 441a888cf108db58ddb13111ad77e04a *R/helper_create_chunks.R
 431b726ba4c5a505ac8e6748a658b0d9 *R/helper_create_colormap.R
 021fbe3d82358b4285b20601666443e9 *R/helper_derive_cn_features.R
@@ -49,13 +49,13 @@ f5cac7fd84c3d0603497f46ce6c95c1f *R/hello.R
 5824e63eabaa54f6a0ca43df1f29c679 *R/helper_scale_nmf_matrix.R
 2850bb6b505e7c605d191383e8d7ff76 *R/helper_sort_signature.R
 9360672e6341efa72c9efb6c68a6fed5 *R/output.R
-e713733911f475a18040b0ae3d06a11d *R/read_copynumber.R
+216798a9e85a9bb05220e1c8d8ffa585 *R/read_copynumber.R
 c4efeac6ecf70638d06964f096969cf4 *R/read_copynumber_ascat.R
 92eb04fe6be3d3fb4af47102892b560c *R/read_copynumber_seqz.R
 81065eb3b22e4dd9682a3d4ee048eea5 *R/read_maf.R
 a834ed6654fcca202c3bedb94a857c00 *R/read_vcf.R
 a2f04355e947bcc57f9c1193a62a8e0e *R/same_size_clustering.R
-7d8b1d71f0007756c79ce264caa05b7d *R/scoring.R
+8469ed3162f0b3cda0e27c4ce4a321ec *R/scoring.R
 7706995970780c4ff14839c9d526a1e1 *R/show_catalogue.R
 caf4dacfc6e0447bbb44ec998d83d7f6 *R/show_cn_circos.R
 b959f514ad57a73d6e6d80c7401b68b6 *R/show_cn_components.R
@@ -92,7 +92,7 @@ c8fdc27d55ab8000466147f264d17020 *R/sig_fit.R
 24fda5fac0b0c16db6836def3a29a61c *R/sigflow.R
 f0e62c1da619733d755a3307099cc07c *R/sigminer.R
 9051a5515f02769b24872260e26a6e91 *R/signature_obj_operation.R
-2ae78795219b90a34e2867d7d1e493e4 *R/sigprofiler.R
+f4b4b28c5efd8acaaa4031432c3adb3a *R/sigprofiler.R
 c12a8a8f131d4235557dd0af03ae1d4c *R/simulation.R
 2deef6bc224418876281ebcb783dd38c *R/transform_seg_table.R
 3ae23ff1c90581c3e5651878b3705fff *R/utils-pipe.R
@@ -100,7 +100,7 @@ c12a8a8f131d4235557dd0af03ae1d4c *R/simulation.R
 4cc448cdaf77d8e858de295bede895d8 *R/utils.R
 de102bc9c3bd8feaf8b5dfa1636088ab *R/utils_mem.R
 4a6970eec7c5fbe8da4cea2f55109fa8 *R/zzz.R
-b07f7caa9745fe01672500989063a24a *README.md
+645709ee0021e83b41c00c8ff6c40e4f *README.md
 9ecb0bdfb906213cc54af05f9a8fb645 *build/partial.rdb
 88a9a3282c5c74adec5da43b97c35f94 *build/vignette.rds
 5ba403d476bdc5dbe1706dfef410219f *data/CN.features.rda
@@ -124,10 +124,10 @@ f016fb5cf892be4352e995fbaa352a86 *data/transcript.mm10.rda
 d4c3953e67ecd69479e018662c98f542 *inst/CITATION
 b2a925324939d08847a7d4865c3ede95 *inst/doc/cnsignature.R
 1db7f95f3ac532360aca4549b3d90fd6 *inst/doc/cnsignature.Rmd
-47a4f556b18f6c6f52a80ed4484b7f3c *inst/doc/cnsignature.html
+94b2ec66fe9724d91785ce2e8d4a48dd *inst/doc/cnsignature.html
 f760617225e3a8dc99b3ab634c4e6ef2 *inst/doc/sigminer.R
 ea54ce943d0aa21c7446b6ba65162f4d *inst/doc/sigminer.Rmd
-2f2e6b4cb75370e91161fac8f13753a0 *inst/doc/sigminer.html
+d1f36d92ed0bd81755f22b667931b0c2 *inst/doc/sigminer.html
 0cba01b00ec69d5c838a798902092bea *inst/extdata/CN40-Map.txt
 2906f34c9c3d2f8dd1495f51e7ffe947 *inst/extdata/CN48-Map.txt
 eb5b6a01a360ed1888f1ac82ab7c4d6d *inst/extdata/CNS_signatures_TCGA.rds
@@ -218,7 +218,7 @@ f599fa3e411b01270a330de86826a867 *man/output_bootstrap.Rd
 c89b878ce73726a3260d0434c65d769a *man/output_sig.Rd
 3d8bece19ea2822fd208a73353654f20 *man/output_tally.Rd
 de570f4bd2659c8f2cd27a85c5f92d4f *man/pipe.Rd
-e18b61fb2c98a54d1eedf477dfc24d95 *man/read_copynumber.Rd
+07f691b86f94a687b962653c42b75e73 *man/read_copynumber.Rd
 83cbb9c18331691d1e1bc4663e7848a6 *man/read_copynumber_ascat.Rd
 44f5d1685e0334e86486afdbdd042ad0 *man/read_copynumber_seqz.Rd
 e12e05b36484210b235e0bdc88751e19 *man/read_maf.Rd
@@ -227,7 +227,7 @@ e12e05b36484210b235e0bdc88751e19 *man/read_maf.Rd
 289575c3d43d270759d347852134e315 *man/read_xena_variants.Rd
 e0f0f58148684b1af29602d41ccd9892 *man/report_bootstrap_p_value.Rd
 5cfeb52f558f030c5c66fbd99af039f0 *man/same_size_clustering.Rd
-4ceaf382d2c0fbf169d3be0f18179758 *man/scoring.Rd
+c7aeafb9b5e0d89840a558fc73312fae *man/scoring.Rd
 e48f1a1b1431a0c88eda9d5e844d734f *man/show_catalogue.Rd
 fa309387833084c076b81a988a13bf36 *man/show_cn_circos.Rd
 464d9af14e6b50ae8a07434595865464 *man/show_cn_components.Rd
@@ -252,7 +252,7 @@ bdf3e59a9fcd276fabb52937fa84ade7 *man/show_sig_bootstrap.Rd
 75c5d159ef868f18ecb66acac519a014 *man/show_sig_profile.Rd
 42bbc80404020f9c818d4fa1c4341014 *man/show_sig_profile_heatmap.Rd
 1be96f67338c50355ac078257b07de99 *man/show_sig_profile_loop.Rd
-375868c74373cef2846a44f5f05bd405 *man/sig_auto_extract.Rd
+b4d079ff64fc6b38fac3188677890618 *man/sig_auto_extract.Rd
 6a83ba871bc31675bfa3123701251fce *man/sig_convert.Rd
 342619427e2349270e0049dce1f9485a *man/sig_estimate.Rd
 249d0d3c486e6fbc0aed4e47a89cfcb2 *man/sig_extract.Rd
@@ -263,7 +263,7 @@ bdf3e59a9fcd276fabb52937fa84ade7 *man/show_sig_bootstrap.Rd
 83806b4611d2ef4ae8dfcf45077c1c94 *man/sig_tally.Rd
 28e33a1c28400c9d9f2419d9cd887855 *man/sig_unify_extract.Rd
 7e21705796efa097291c413ecbf34803 *man/sigminer.Rd
-20c4944d270646edb6a0364565905ab4 *man/sigprofiler.Rd
+8f3612c68b27669dc29da5e62f767de6 *man/sigprofiler.Rd
 8dec5b2da154a32f2b5bca8ebac728d1 *man/simulated_catalogs.Rd
 a7bccd3f180cebd8cce0e4ad95da8ba6 *man/simulation.Rd
 d44ce854a18ab2b4a50f6a35b8548071 *man/subset.CopyNumber.Rd
