@@ -1,3 +1,14 @@
+# sigminer 2.2.0
+
+- Removed package 'copynumber' from suggests filed.
+- Supported Ziyu Tao et al approach for copy number segment classification. 
+- Supported ce11 genome in `read_vcf()`.
+- Added `read_maf_minimal()` to support a minimal MAF-like data as input.
+
+# sigminer 2.1.10
+
+- Fixed the issue about the latest CN signatures from COSMIC have inconsistent labels with built-in CN signatures (#421).
+
 # sigminer 2.1.9
 
 - Sorted substitution mutation types by default in `sig_tally()`.
