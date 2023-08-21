@@ -13,8 +13,8 @@ sig_auto_extract(
   ref_sigs = NULL,
   K0 = 25,
   nrun = 10,
-  niter = 2e+05,
-  tol = 1e-07,
+  niter = 200000,
+  tol = 0.0000001,
   cores = 1,
   optimize = FALSE,
   skip = FALSE,
@@ -32,7 +32,7 @@ sig_auto_extract(
 a half-normal prior for H (This method is used by PCAWG project, see reference #3).
 You can also use "L1KL" to set expoential priors for both W and H, and "L2KL" to
 set half-normal priors for both W and H. The latter two methods are originally
-implemented by \href{https://software.broadinstitute.org/cancer/cga/msp}{SignatureAnalyzer software}.}
+implemented by SignatureAnalyzer software.}
 
 \item{strategy}{the selection strategy for returned data. Set 'stable' for getting optimal
 result from the most frequent K. Set 'optimal' for getting optimal result from all Ks.
@@ -80,7 +80,7 @@ to extract copy number signatures})). See detail part and references for more.
 There are three methods available in this function: "L1W.L2H", "L1KL" and "L2KL".
 They use different priors for the bayesian variant of NMF algorithm
 (see \code{method} parameter) written by reference #1 and implemented in
-\href{https://software.broadinstitute.org/cancer/cga/msp}{SignatureAnalyzer software}
+SignatureAnalyzer software
 (reference #2).
 
 I copied source code for the three methods from Broad Institute and supplementary
@@ -90,13 +90,14 @@ in \strong{sigminer} package. Besides, I implemented parallel computation to spe
 the calculation process and a similar input and output structure like \code{\link[=sig_extract]{sig_extract()}}.
 }
 \examples{
+\donttest{
 load(system.file("extdata", "toy_copynumber_tally_W.RData",
   package = "sigminer", mustWork = TRUE
 ))
 res <- sig_auto_extract(cn_tally_W$nmf_matrix, result_prefix = "Test_copynumber", nrun = 1)
 # At default, all run files are stored in tempdir()
 dir(tempdir(), pattern = "Test_copynumber")
-\donttest{
+
 laml.maf <- system.file("extdata", "tcga_laml.maf.gz", package = "maftools")
 laml <- read_maf(maf = laml.maf)
 mt_tally <- sig_tally(

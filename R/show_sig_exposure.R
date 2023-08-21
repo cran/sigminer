@@ -11,6 +11,7 @@
 #' @param groups sample groups, default is `NULL`.
 #' @param grp_order order of groups, default is `NULL`.
 #' @param grp_size font size of groups.
+#' @param samps sample vector to filter samples or sort samples, default is `NULL`.
 #' @param cutoff a cutoff value to remove hyper-mutated samples.
 #' @param palette palette used to plot, default use a built-in palette
 #' according to parameter `style`.
@@ -24,6 +25,7 @@
 #' @importFrom grDevices rainbow
 #' @export
 #' @examples
+#' \donttest{
 #' # Load mutational signature
 #' load(system.file("extdata", "toy_mutational_signature.RData",
 #'   package = "sigminer", mustWork = TRUE
@@ -39,6 +41,7 @@
 #' # Show signature exposure
 #' p2 <- show_sig_exposure(sig)
 #' p2
+#' }
 #' @testexamples
 #' expect_s3_class(p1, "ggplot")
 #' expect_s3_class(p2, "ggplot")
@@ -47,6 +50,7 @@ show_sig_exposure <- function(Signature,
                               groups = NULL,
                               grp_order = NULL,
                               grp_size = NULL,
+                              samps = NULL,
                               cutoff = NULL,
                               style = c("default", "cosmic"),
                               palette = use_color_style(style),
@@ -161,7 +165,14 @@ show_sig_exposure <- function(Signature,
   df <- rbind(x1, x2)
 
   df$class0 <- factor(df$class0, c("Est_Counts", "Fraction"))
-  df$Sample <- factor(df$Sample, sample.ordering)
+
+  if (!is.null(samps)) {
+    df <- df %>%
+      dplyr::filter(df$Sample %in% samps)
+    df$Sample <- factor(df$Sample, samps)
+  } else {
+    df$Sample <- factor(df$Sample, sample.ordering)
+  }
 
   if (!is.null(groups)) {
     if (is.character(groups)) {

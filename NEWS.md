@@ -1,3 +1,28 @@
+# sigminer 2.2.2
+
+- Updated pkg doc following the new CRAN feature (thanks to K from the CRAN team).
+- Added `samps` option to `show_sig_exposure()`.
+
+Example:
+
+```r
+load(system.file("extdata", "toy_mutational_signature.RData",
+                 package = "sigminer", mustWork = TRUE
+))
+# Show signature exposure
+p1 <- show_sig_exposure(sig2, rm_space = TRUE)
+p1
+
+expo = sig_exposure(sig2)
+show_sig_exposure(expo,
+                  rm_space = TRUE,
+                  samps = colnames(expo)[order(colSums(expo))])
+```
+
+# sigminer 2.2.1
+
+- Fixed the error in generating SBS matrix when only one sample input (#432).
+
 # sigminer 2.2.0
 
 - Removed package 'copynumber' from suggests filed.

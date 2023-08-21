@@ -11,7 +11,7 @@
 #' There are three methods available in this function: "L1W.L2H", "L1KL" and "L2KL".
 #' They use different priors for the bayesian variant of NMF algorithm
 #' (see `method` parameter) written by reference #1 and implemented in
-#' [SignatureAnalyzer software](https://software.broadinstitute.org/cancer/cga/msp)
+#' SignatureAnalyzer software
 #' (reference #2).
 #'
 #' I copied source code for the three methods from Broad Institute and supplementary
@@ -29,7 +29,7 @@
 #' a half-normal prior for H (This method is used by PCAWG project, see reference #3).
 #' You can also use "L1KL" to set expoential priors for both W and H, and "L2KL" to
 #' set half-normal priors for both W and H. The latter two methods are originally
-#' implemented by [SignatureAnalyzer software](https://software.broadinstitute.org/cancer/cga/msp).
+#' implemented by SignatureAnalyzer software.
 #' @param strategy the selection strategy for returned data. Set 'stable' for getting optimal
 #' result from the most frequent K. Set 'optimal' for getting optimal result from all Ks.
 #' Set 'ms' for getting result with maximum mean cosine similarity with provided reference
@@ -62,13 +62,14 @@
 #' @export
 #'
 #' @examples
+#' \donttest{
 #' load(system.file("extdata", "toy_copynumber_tally_W.RData",
 #'   package = "sigminer", mustWork = TRUE
 #' ))
 #' res <- sig_auto_extract(cn_tally_W$nmf_matrix, result_prefix = "Test_copynumber", nrun = 1)
 #' # At default, all run files are stored in tempdir()
 #' dir(tempdir(), pattern = "Test_copynumber")
-#' \donttest{
+#' 
 #' laml.maf <- system.file("extdata", "tcga_laml.maf.gz", package = "maftools")
 #' laml <- read_maf(maf = laml.maf)
 #' mt_tally <- sig_tally(

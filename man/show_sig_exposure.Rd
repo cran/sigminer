@@ -10,6 +10,7 @@ show_sig_exposure(
   groups = NULL,
   grp_order = NULL,
   grp_size = NULL,
+  samps = NULL,
   cutoff = NULL,
   style = c("default", "cosmic"),
   palette = use_color_style(style),
@@ -36,6 +37,8 @@ you can specify them by \code{sig_names} parameter.}
 \item{grp_order}{order of groups, default is \code{NULL}.}
 
 \item{grp_size}{font size of groups.}
+
+\item{samps}{sample vector to filter samples or sort samples, default is \code{NULL}.}
 
 \item{cutoff}{a cutoff value to remove hyper-mutated samples.}
 
@@ -68,6 +71,7 @@ a \code{ggplot} object
 Currently support copy number signatures and mutational signatures.
 }
 \examples{
+\donttest{
 # Load mutational signature
 load(system.file("extdata", "toy_mutational_signature.RData",
   package = "sigminer", mustWork = TRUE
@@ -83,6 +87,7 @@ load(system.file("extdata", "toy_copynumber_signature_by_W.RData",
 # Show signature exposure
 p2 <- show_sig_exposure(sig)
 p2
+}
 }
 \author{
 Shixiang Wang
