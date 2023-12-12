@@ -21,7 +21,7 @@
 #' @testexamples
 #' expect_is(maf, "MAF")
 read_vcf <- function(vcfs, samples = NULL,
-                     genome_build = c("hg19", "hg38", "mm10", "mm9", "ce11"),
+                     genome_build = c("hg19", "hg38", "T2T", "mm10", "mm9", "ce11"),
                      keep_only_pass = FALSE, verbose = TRUE) {
   genome_build <- match.arg(genome_build)
   vcfs_name <- vcfs
@@ -79,32 +79,9 @@ read_vcf <- function(vcfs, samples = NULL,
   vcfs$Gene_ID <- "Unknown"
 
   # Annotate gene symbol
-  gene_file <- switch(genome_build,
-    mm9 = file.path(
-      system.file("extdata", package = "sigminer"),
-      "mouse_mm9_gene_info.rds"
-    ),
-    mm10 = file.path(
-      system.file("extdata", package = "sigminer"),
-      "mouse_mm10_gene_info.rds"
-    ),
-    ce11 = file.path(
-      system.file("extdata", package = "sigminer"),
-      "ce11_gene_info.rds"
-    ),
-    file.path(
-      system.file("extdata", package = "sigminer"),
-      paste0("human_", genome_build, "_gene_info.rds")
-    )
-  )
-  ok <- TRUE
-  if (!file.exists(gene_file)) ok <- query_remote_data(basename(gene_file))
-  if (!ok) {
-    return(invisible(NULL))
-  }
-  gene_dt <- readRDS(gene_file)
+  gene_dt <- get_genome_annotation("gene", genome_build = genome_build)
 
-  if (verbose) message("Annotating mutations to first matched gene based on database ", gene_file, "...")
+  if (verbose) message("Annotating mutations to first matched gene based on database of ", genome_build, "...")
   dt <- gene_dt[, c("chrom", "start", "end", "gene_name", "gene_id")]
   data.table::setkey(dt, "chrom", "start", "end")
 

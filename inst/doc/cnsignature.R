@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -40,13 +40,13 @@ act_refit2 = act_refit[apply(act_refit, 1, function(x) sum(x) > 0.1),]
 
 rownames(act_refit2)
 
-## ---- fig.width=10, fig.height=3----------------------------------------------
+## ----fig.width=10, fig.height=3-----------------------------------------------
 show_sig_profile(sig_denovo, mode = "copynumber", method = "S", style = "cosmic")
 
 ## -----------------------------------------------------------------------------
 show_sig_exposure(sig_denovo)
 
-## ---- fig.height=8, fig.width=10----------------------------------------------
+## ----fig.height=8, fig.width=10-----------------------------------------------
 show_sig_profile(
   get_sig_db("CNS_TCGA")$db[, rownames(act_refit2)],
   style = "cosmic", 

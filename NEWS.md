@@ -1,3 +1,16 @@
+# sigminer 2.3.0
+
+
+- Supported human T2T genome and corresponding annotation data.
+- Updated COSMIC database to v3.4. SV and RNA-SBS signatures are included.
+
+```r
+get_sig_db("latest_RNA-SBS_GRCh37")
+get_sig_db("latest_SV_GRCh38")
+```
+
+- Fixed a bug in generating matrix for variation categories with strand bias due to problematic counting. (#445)
+
 # sigminer 2.2.2
 
 - Updated pkg doc following the new CRAN feature (thanks to K from the CRAN team).
