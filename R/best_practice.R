@@ -216,7 +216,7 @@ bp_extract_signatures <- function(nmf_matrix,
                                   n_bootstrap = 20L,
                                   n_nmf_run = 50,
                                   RTOL = 1e-3, min_contribution = 0,
-                                  cores = min(4L, future::availableCores()),
+                                  cores = parallelly::availableCores(max = 4),
                                   cores_solution = min(cores, length(range)),
                                   seed = 123456L,
                                   handle_hyper_mutation = TRUE,
@@ -441,13 +441,23 @@ bp_extract_signatures <- function(nmf_matrix,
             i
           ))
 
+          # NMF's built-in shared-memory backend caps the requested cores at 2
+          # (see NMF:::setupBackend), so a registered foreach backend is used
+          # to honor the requested core number (#479).
+          use_dopar <- cores > 1L && requireNamespace("doParallel", quietly = TRUE)
+          if (use_dopar) {
+            doParallel::registerDoParallel(cores)
+            on.exit(doParallel::stopImplicitCluster(), add = TRUE)
+          }
+
           r <- NMF::nmf(
             bt_catalog_list[[i]],
             rank = range[k],
             method = "brunet",
             seed = seed,
             nrun = n_nmf_run,
-            .options = paste0("v", if (ncol(bt_catalog_list[[i]]) > 100) 4 else 1, "mkp", cores)
+            .options = paste0("v", if (ncol(bt_catalog_list[[i]]) > 100) 4 else 1, "mkp", cores),
+            .pbackend = if (use_dopar) NULL else NMF::nmf.getOption("pbackend")
           )
           if (inherits(r, "NMFfit")) {
             r <- list(r)
@@ -624,7 +634,7 @@ bp_extract_signatures_iter <- function(nmf_matrix,
                                        n_bootstrap = 20L,
                                        n_nmf_run = 50,
                                        RTOL = 1e-3, min_contribution = 0,
-                                       cores = min(4L, future::availableCores()),
+                                       cores = parallelly::availableCores(max = 4),
                                        cores_solution = min(cores, length(range)),
                                        seed = 123456L,
                                        handle_hyper_mutation = TRUE,
@@ -1116,7 +1126,7 @@ bp_attribute_activity <- function(input,
     oplan <- future::plan()
     future::plan(set_future_strategy(),
       workers = if (is.logical(use_parallel)) {
-        future::availableCores()
+        parallelly::availableCores()
       } else {
         use_parallel
       }

@@ -1,9 +1,9 @@
 #' Extract Signatures with SigProfiler
 #'
 #' This function provides an interface to software SigProfiler.
-#' More please see <https://github.com/AlexandrovLab/SigProfilerExtractor>.
+#' More please see <https://github.com/SigProfilerSuite/SigProfilerExtractor>.
 #' Typically, a reference genome is not required because the input is a matrix (my understanding).
-#' **If you are using refitting result by SigProfiler, please make sure you have input the matrix same order as examples at <https://github.com/AlexandrovLab/SigProfilerMatrixGenerator/tree/master/SigProfilerMatrixGenerator/references/matrix/BRCA_example>**. If not, use `sigprofiler_reorder()` firstly.
+#' **If you are using refitting result by SigProfiler, please make sure you have input the matrix same order as examples at <https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator/tree/master/SigProfilerMatrixGenerator/references/matrix/BRCA_example>**. If not, use `sigprofiler_reorder()` firstly.
 #'
 #' @inheritParams sig_extract
 #' @name sigprofiler
@@ -13,10 +13,10 @@
 #' so user can call SigProfiler with the input by himself.
 #' @param range signature number range, i.e. `2:5`.
 #' @param nrun the number of iteration to be performed to extract each signature number.
-#' @param refit if `TRUE`, then refit the denovo signatures with nnls. Same
-#' meaning as `optimize` option in [sig_extract] or [sig_auto_extract].
+#' @param refit **Deprecated**. This parameter is no longer supported in recent versions
+#' of SigProfilerExtractor and will be ignored if provided.
 #' @param refit_plot if `TRUE`, SigProfiler will make
-#' denovo to COSMIC sigantures decompostion plots. However, this may fail due
+#' denovo to COSMIC signatures decomposition plots. However, this may fail due
 #' to some matrix cannot be identified by SigProfiler plot program.
 #' @param is_exome if `TRUE`, the exomes will be extracted.
 #' @param init_method the initialization algorithm for W and H matrix of NMF.
@@ -67,6 +67,14 @@ sigprofiler_extract <- function(nmf_matrix, output,
                                 sigprofiler_version = "1.1.3") {
   output <- path.expand(output)
   genome_build <- match.arg(genome_build)
+
+  if (!missing(refit)) {
+    send_warning(
+      "The {.arg refit} argument of {.fn sigprofiler_extract} is deprecated",
+      " and ignored: recent versions of {.pkg SigProfilerExtractor}",
+      " no longer support the {.val refit_denovo_signatures} option."
+    )
+  }
 
   genome_build <- switch(genome_build,
     hg19 = "GRCh37",
@@ -129,7 +137,7 @@ sigprofiler_extract <- function(nmf_matrix, output,
   on.exit(unlink(tmp_file))
 
   ## The newst version
-  ## https://github.com/AlexandrovLab/SigProfilerExtractor
+  ## https://github.com/SigProfilerSuite/SigProfilerExtractor
   tryCatch(
     {
       sigpro$sigProfilerExtractor(
@@ -143,7 +151,6 @@ sigprofiler_extract <- function(nmf_matrix, output,
         nmf_replicates = nrun,
         exome = is_exome,
         nmf_init = init_method,
-        refit_denovo_signatures = refit,
         make_decomposition_plots = refit_plot,
         cpu = cores
       )
@@ -169,7 +176,6 @@ sigprofiler_extract <- function(nmf_matrix, output,
         quote_opt(nrun, opt = "nmf_replicates", rm_quote = TRUE),
         quote_opt(ifelse(is_exome, "True", "False"), opt = "exome", rm_quote = TRUE),
         quote_opt(init_method, opt = "nmf_init"),
-        quote_opt(ifelse(refit, "True", "False"), opt = "refit_denovo_signatures", rm_quote = TRUE),
         quote_opt(ifelse(refit_plot, "True", "False"), opt = "make_decomposition_plots", rm_quote = TRUE),
         quote_opt(cores, opt = "cpu", rm_quote = TRUE),
         sep = ","
@@ -398,7 +404,7 @@ sigprofiler_reorder = function(nmf_matrix,
                                ) {
   type = match.arg(type)
   message("Downloading reference file...")
-  ref = data.table::fread(sprintf("https://raw.githubusercontent.com/AlexandrovLab/SigProfilerMatrixGenerator/master/SigProfilerMatrixGenerator/references/matrix/BRCA_example/BRCA_example.%s.all", type))
+  ref = data.table::fread(sprintf("https://raw.githubusercontent.com/SigProfilerSuite/SigProfilerMatrixGenerator/master/SigProfilerMatrixGenerator/references/matrix/BRCA_example/BRCA_example.%s.all", type))
   ref = tibble::column_to_rownames(ref, "MutationType")
   ref = t(as.matrix(ref))
 

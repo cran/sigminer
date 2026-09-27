@@ -1,3 +1,16 @@
+# sigminer 2.3.3
+
+- Replaced `future::availableCores()` with `parallelly::availableCores()`.
+- Fixed NULL row names in NMF matrix when using `sig_tally()` with Wang method, particularly for single-sample cases.
+- Fixed compatibility issue with newer versions of SigProfilerExtractor by removing deprecated `refit_denovo_signatures` parameter from `sigprofiler_extract()`. The `refit` parameter is now deprecated and ignored.
+- `sig_estimate()`, `sig_extract()` and `bp_extract_signatures()` can now use more than 2 cores: register a `foreach` backend to avoid the 2-core cap of the built-in parallel backend of the **NMF** package (#479).
+- Fixed the "Unknown or uninitialised column" warnings of `read_maf_minimal()` when the input is a tibble (#461).
+
+# sigminer 2.3.2
+
+- Fixed a bug that generating a wrong data type when only a sample is handled (#463).
+Thanks to @selkamand.
+
 # sigminer 2.3.1
 
 - Updated `sig_fit()` related documents for better usage (#454).
@@ -432,7 +445,7 @@ Made them more consistent and allowed un-assigned signature contribution (#285).
 - Added "highlight" option.
 - `lsei` package was removed from CRAN, here I reset default method to 'QP' and tried best to keep the LS usage in sigminer ([#189](https://github.com/ShixiangWang/sigminer/issues/189)).
 - Made consistent copy number labels in `show_sig_profile()` and added input checking for this function.
-- Fixed unconsistent bootstrap when use `furrr`, solution is from <https://github.com/DavisVaughan/furrr/issues/107>.
+- Fixed unconsistent bootstrap when use `furrr` (solution from an issue of the furrr package, which is no longer accessible).
 - Properly handled null-count sample in `sig_fit()` for methods `QP` and `SA`.
 - Supported boxplot or violin in `show_sig_fit()` and `show_sig_bootstrap_*` functions.
 - Added job mode for `sig_fit_bootstrap_batch` for more useful in practice.

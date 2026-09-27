@@ -6,13 +6,14 @@
 [![CRAN
 status](https://www.r-pkg.org/badges/version/sigminer)](https://cran.r-project.org/package=sigminer)
 [![lifecycle](https://img.shields.io/badge/lifecycle-stable-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html)
-[![R-CMD-check](https://github.com/ShixiangWang/sigminer/workflows/R-CMD-check/badge.svg)](https://github.com/ShixiangWang/sigminer/actions)
+[![R-CMD-check](https://github.com/ShixiangWang/sigminer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ShixiangWang/sigminer/actions/workflows/R-CMD-check.yaml)
 [![](https://cranlogs.r-pkg.org/badges/grand-total/sigminer?color=orange)](https://cran.r-project.org/package=sigminer)
 [![Closed
 issues](https://img.shields.io/github/issues-closed/ShixiangWang/sigminer.svg)](https://github.com/ShixiangWang/sigminer/issues?q=is%3Aissue+is%3Aclosed)
-[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FShixiangWang%2Fsigminer&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 ![install with
 bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)
+[![Anaconda-Server
+Badge](https://anaconda.org/bioconda/r-sigminer/badges/downloads.svg)](https://anaconda.org/bioconda/r-sigminer)
 [![check in
 Biotreasury](https://img.shields.io/badge/Biotreasury-collected-brightgreen)](https://biotreasury.rjmart.cn/#/tool?id=10043)
 
@@ -30,25 +31,25 @@ For pipeline tool, please see its co-evolutionary CLI
 
 **SBS signatures**:
 
-<img src="man/figures/README-unnamed-chunk-1-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-1-1.png" alt="" width="100%" />
 
 **Copy number signatures**:
 
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-2-1.png" alt="" width="100%" />
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-3-1.png" alt="" width="100%" />
 
 **DBS signatures**:
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-4-1.png" alt="" width="100%" />
 
 **INDEL (i.e. ID) signatures**:
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" />
 
 **Genome rearrangement signatures**:
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-6-1.png" alt="" width="100%" />
 
 ### :airplane: Features
 
@@ -85,9 +86,7 @@ You can install the development version of **sigminer** from Github
 with:
 
 ``` r
-remotes::install_github("ShixiangWang/sigminer", dependencies = TRUE)
-# For Chinese users, run 
-remotes::install_git("https://gitee.com/ShixiangWang/sigminer", dependencies = TRUE)
+BiocManager::install("ShixiangWang/sigminer", dependencies = TRUE)
 ```
 
 You can also install **sigminer** from conda `bioconda` channel with
@@ -110,10 +109,25 @@ organized and documented at
 usage of a specific function `fun`, run `?fun` in your R console to see
 its documentation.
 
+## :question: QA
+
+### How to install the `copynumber` package
+
+For some extra features provided by **sigminer**, **copynumber** package
+is required. Due to the removal of the **copynumber** package from Bioc,
+I had to remove it from the dependencies in v2.2.0. You can install the
+package from <https://github.com/shixiangwang/copynumber/>. It is
+generally recommended as I have added some features, although other
+forks of this package exist on GitHub.
+
+``` r
+remotes::install_github("ShixiangWang/copynumber")
+```
+
 ## :paperclip: Citation
 
-If you use **sigminer** in academic field, please cite one of the
-following papers.
+If you use **sigminer** in academic field, please at least cite one of
+the following papers.
 
 ------------------------------------------------------------------------
 
@@ -135,7 +149,7 @@ following papers.
 
 ## :arrow_down: Download Stats
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-9-1.png" alt="" width="100%" />
 
 ## :page_with_curl: References
 
@@ -173,7 +187,7 @@ without the giants.
     Alexandrov LB: SigProfilerMatrixGenerator: a tool for visualizing
     and exploring patterns of small mutational events. BMC Genomics
     2019, 20:685
-    <https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-019-6041-2>
+    <https://link.springer.com/article/10.1186/s12864-019-6041-2>
 
 ## :page_facing_up: LICENSE
 
@@ -198,4 +212,9 @@ MIT © 2018 Anand Mayakonda
 Sigminer v1-v2 are supported by [**Cancer Biology
 Group**](https://github.com/XSLiuLab) **@ShanghaiTech**
 
-![Alt](https://repobeats.axiom.co/api/embed/7cd2cf8a196dde9d8d1e13c9b23bc2f157d8254e.svg "Repobeats analytics image")
+<figure>
+<img
+src="https://repobeats.axiom.co/api/embed/7cd2cf8a196dde9d8d1e13c9b23bc2f157d8254e.svg"
+title="Repobeats analytics image" alt="Alt" />
+<figcaption aria-hidden="true">Alt</figcaption>
+</figure>

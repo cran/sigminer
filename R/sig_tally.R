@@ -131,7 +131,7 @@ sig_tally <- function(object, ...) {
 #' "min" and "max" columns available. Valid features can be printed by
 #' `unique(CN.features$feature)`.
 #' @param cores number of computer cores to run this task.
-#' You can use [future::availableCores()] function to check how
+#' You can use [parallelly::availableCores()] function to check how
 #' many cores you can use.
 #' @param keep_only_matrix if `TRUE`, keep only matrix for signature extraction.
 #' For a `MAF` object, this will just return the most useful matrix.
@@ -197,9 +197,13 @@ sig_tally.CopyNumber <- function(object,
       dplyr::as_tibble() %>%
       tibble::column_to_rownames(var = "component") %>%
       as.matrix()
+    # Store sample names before reordering and transpose
+    sample_names <- colnames(cn_matrix)
     # Order the matrix as feature_setting
     cn_matrix <- cn_matrix[feature_setting$component, ] %>%
       t()
+    # Explicitly set row names to sample names after transpose
+    rownames(cn_matrix) <- sample_names
 
     if (any(is.na(cn_matrix))) {
       send_warning("{.code NA} detected. There may be an issue, please contact the developer!")

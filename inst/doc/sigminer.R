@@ -19,18 +19,18 @@ mat <- t(simulated_catalogs$set1)
 mat[1:5, 1:5]
 
 ## ----eval=FALSE-----------------------------------------------------------------------------------
-#  # Here I reduce the values for n_bootstrap and n_nmf_run
-#  # for reducing the run time.
-#  # In practice, you should keep default or increase the values
-#  # for better estimation.
-#  #
-#  # The input data here is simulated from 10 mutational signatures
-#  e1 <- bp_extract_signatures(
-#    mat,
-#    range = 8:12,
-#    n_bootstrap = 5,
-#    n_nmf_run = 10
-#  )
+# # Here I reduce the values for n_bootstrap and n_nmf_run
+# # for reducing the run time.
+# # In practice, you should keep default or increase the values
+# # for better estimation.
+# #
+# # The input data here is simulated from 10 mutational signatures
+# e1 <- bp_extract_signatures(
+#   mat,
+#   range = 8:12,
+#   n_bootstrap = 5,
+#   n_nmf_run = 10
+# )
 
 ## ----include=FALSE--------------------------------------------------------------------------------
 e1 <- readRDS("e1.rds")

@@ -1,7 +1,7 @@
 Package: sigminer
 Title: Extract, Analyze and Visualize Mutational Signatures for Genomic
         Variations
-Version: 2.3.1
+Version: 2.3.3
 Authors@R: c(
     person("Shixiang", "Wang", , "w_shixiang@163.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-9855-7357")),
@@ -33,11 +33,12 @@ BugReports: https://github.com/ShixiangWang/sigminer/issues
 Depends: R (>= 3.5)
 Imports: cli (>= 2.0.0), cowplot, data.table, dplyr, furrr (>= 0.2.0),
         future, ggplot2 (>= 3.3.0), ggpubr, maftools, magrittr,
-        methods, NMF, purrr, Rcpp, rlang (>= 0.1.2), stats, tidyr
+        methods, NMF, parallelly, purrr, Rcpp, rlang (>= 0.1.2), stats,
+        tidyr
 Suggests: Biobase, Biostrings, BSgenome, BSgenome.Hsapiens.UCSC.hg19,
-        circlize, cluster, covr, digest, GenomicRanges, GenSA,
-        ggalluvial, ggcorrplot, ggfittext, ggplotify, ggrepel, IRanges,
-        knitr, lpSolve, markdown, matrixStats, nnls, parallel,
+        circlize, cluster, covr, digest, doParallel, GenomicRanges,
+        GenSA, ggalluvial, ggcorrplot, ggfittext, ggplotify, ggrepel,
+        IRanges, knitr, lpSolve, markdown, matrixStats, nnls, parallel,
         patchwork, pheatmap, quadprog, R.utils, RColorBrewer,
         reticulate, rmarkdown, roxygen2, scales, synchronicity,
         testthat (>= 3.0.0), tibble, UCSCXenaTools
@@ -46,16 +47,18 @@ VignetteBuilder: knitr
 biocViews:
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.3
 Config/testthat/edition: 3
 NeedsCompilation: yes
-Packaged: 2024-05-11 04:07:34 UTC; wsx
-Author: Shixiang Wang [aut, cre] (<https://orcid.org/0000-0001-9855-7357>),
-  Ziyu Tao [aut] (<https://orcid.org/0000-0003-3272-1227>),
-  Huimin Li [aut] (<https://orcid.org/0000-0003-1683-9057>),
-  Tao Wu [aut] (<https://orcid.org/0000-0002-8999-9628>),
-  Xue-Song Liu [aut, ctb] (<https://orcid.org/0000-0002-7736-0077>),
+Packaged: 2026-09-27 00:56:43 UTC; wsx
+Author: Shixiang Wang [aut, cre] (ORCID:
+    <https://orcid.org/0000-0001-9855-7357>),
+  Ziyu Tao [aut] (ORCID: <https://orcid.org/0000-0003-3272-1227>),
+  Huimin Li [aut] (ORCID: <https://orcid.org/0000-0003-1683-9057>),
+  Tao Wu [aut] (ORCID: <https://orcid.org/0000-0002-8999-9628>),
+  Xue-Song Liu [aut, ctb] (ORCID:
+    <https://orcid.org/0000-0002-7736-0077>),
   Anand Mayakonda [ctb]
 Maintainer: Shixiang Wang <w_shixiang@163.com>
 Repository: CRAN
-Date/Publication: 2024-05-11 08:50:02 UTC
+Date/Publication: 2026-09-27 02:30:02 UTC
