@@ -42,7 +42,8 @@ sigprofiler_reorder(
 \item{output}{output directory.}
 
 \item{output_matrix_only}{if \code{TRUE}, only generate matrix file for SigProfiler
-so user can call SigProfiler with the input by himself.}
+so user can call SigProfiler with the input by himself. This mode is pure R:
+no Python, reticulate, or conda contact is made.}
 
 \item{range}{signature number range, i.e. \code{2:5}.}
 

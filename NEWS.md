@@ -1,3 +1,44 @@
+# sigminer 2.4.0
+
+- `sig_extract()`, `sig_estimate()` and `bp_extract_signatures()` gained a `backend = c("R", "rust")`
+  argument (issue #478, parity plan P1). `"R"` keeps the in-package **NMF** engine byte-for-byte;
+  `"rust"` routes the decomposition across an isolated process boundary to the certified in-house
+  Apache-2.0 KL-MU kernel shipped with the `msuiter` package (optional, runtime-gated; install from
+  https://github.com/WangLabCSU/msuiter — not yet on CRAN):
+  `msuiter-kernel fit-kl`, protocol 1, with a frozen `--version` handshake, fail-closed output
+  parsing, a fixed iteration budget via option `sigminer.rust_iters` (default 2000) and an explicit
+  per-run seed law (`seed + i - 1` for run `i` of `nrun`). The rust path is mutually exclusive with
+  `pynmf = TRUE` and expects a KL-family method (`"brunet"`).
+- Fixed the SigProfiler interop recall command (`sigprofiler_extract()` fallback path after the
+  reticulate call fails) to escape Windows backslash paths before embedding them in the Python
+  `-c` payload (issue #470): literal backslashes are doubled for the `cmd.exe` layer, and values
+  that can not travel the shell + python layers safely (embedded quotes, line breaks, `%VAR%`
+  expansion, POSIX backslashes, `$`/backtick expansion, word-splitting whitespace in the Python
+  path) are now rejected with an actionable error instead of emitting a broken command.
+- `sigprofiler_extract(output_matrix_only = TRUE)` no longer requires the Python / reticulate /
+  conda stack: the matrix-file hand-off is pure R.
+- Clarified the `sigprofiler_import(type = "refit")` documentation against the current
+  SigProfilerExtractor output tree: the branch reads
+  `Suggested_Solution/COSMIC_<MT>_Decomposed_Solution`, which current versions emit
+  unconditionally; the upstream option that was removed is `refit_denovo_signatures` on the
+  extract side. The refit import branch stays functional and is now pinned by fixture tests.
+- Added testthat fixture round-trip coverage for the interop bridge and a local-only
+  SigProfilerExtractor version-matrix harness (opt-in via `SIGMINER_SP_MATRIX=1`;
+  deliberately not wired into CI, see `tests/testthat/README-sigprofiler-matrix.md`).
+- `sig_fit()` gained two opt-in likelihood-based refit methods (parity plan P3):
+  `method = "likelihood"`, a clean-room implementation of the MuSiCal bidirectional stepwise
+  selection under the multinomial likelihood (Jin et al., Nature Genetics 56:541-552, 2024;
+  see `?sig_fit` references), with the acceptance thresholds exposed as the caller-overridable
+  `ll_add` / `ll_keep` arguments — the paper describes them as study-optimized parameters, and
+  the in-lane defaults (8 / 8) are a fixture calibration, not paper constants; and
+  `method = "lrt"`, a clean-room implementation of the PASA likelihood-ratio presence tests with
+  the stop and minimality criteria at the significance level `alpha` (Jiang et al., Briefings in
+  Bioinformatics 26(1):bbaf042, 2025; default `alpha = 0.01`, in-lane calibration). Both methods
+  refit the selected set with the same QP simplex engine that drives `method = "QP"`, reject
+  `auto_reduce` (their decision layer already selects the reference set), and are also available
+  on the bootstrap surfaces `sig_fit_bootstrap()` and `sig_fit_bootstrap_batch()`. The legacy
+  methods and the default remain unchanged.
+
 # sigminer 2.3.3
 
 - Replaced `future::availableCores()` with `parallelly::availableCores()`.
